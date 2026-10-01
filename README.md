@@ -182,6 +182,19 @@ curl -s http://localhost:4141/api/commands | jq .
 curl -s http://localhost:4141/api/commands/raw/seed-git-undo-commit | bash
 ```
 
+> [!WARNING]
+> **Terminal Execution Warning**:
+> Directly piping remote or uninspected network commands into your shell (`curl ... | bash` or `curl ... | sh`) can be dangerous. It executes scripts immediately with your user account's full shell permissions. Malicious, malformed, or unintended commands can modify critical system files, expose credentials, or result in permanent data loss.
+>
+> **Safe Practice**: Always inspect the command or script output first before piping it into your shell:
+> ```bash
+> # Step 1: Inspect the raw script safely
+> curl -s http://localhost:4141/api/commands/raw/seed-git-undo-commit
+>
+> # Step 2: Only execute once you have verified its contents
+> curl -s http://localhost:4141/api/commands/raw/seed-git-undo-commit | bash
+> ```
+
 #### 3. Search for Docker cleanup commands:
 ```bash
 curl -s "http://localhost:4141/api/snippets/search?q=docker" | jq '.snippets[].title'
@@ -415,6 +428,7 @@ cli-programmer-notebook/
 - **Local Storage by Default**: Your snippets never leave your device unless you explicitly run the embedded API server.
 - **Granular Visibility**: Each snippet is marked either `🌐 Public` or `🔒 Private`.
 - **API Guard**: When the API server is active without an API key, private entries are strictly filtered out (`403 Forbidden`). Providing the configured `--api-key` via `Authorization: Bearer <token>` or `?token=<token>` unlocks private entries.
+- **Safe Terminal Execution**: Directly running or piping unverified remote commands into your shell is dangerous. Always inspect command content first before executing scripts with active user permissions.
 
 ---
 
