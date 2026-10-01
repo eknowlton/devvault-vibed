@@ -16,6 +16,19 @@ export interface TerminalCardOptions {
   duration?: string;
   exitCode?: number;
   theme?: 'cyberpunk' | 'tokyo' | 'dracula' | 'matrix' | 'minimal';
+  comment?: string;
+}
+
+/**
+ * Extracts and normalizes shell comment lines starting with #.
+ */
+export function extractCommentLines(comment?: string): string[] {
+  if (!comment) return [];
+  return comment
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map((l) => (l.startsWith('#') ? l : `# ${l}`));
 }
 
 /**
@@ -44,11 +57,12 @@ export function formatAsciiTerminalCard(options: TerminalCardOptions): string {
   const exitCode = options.exitCode ?? 0;
   const exitStatus = exitCode === 0 ? '✔ exit 0' : `✘ exit ${exitCode}`;
 
+  const commentLines = extractCommentLines(options.comment);
   const cmdLines = command.split('\n');
   const outLines = output.split('\n');
 
   // Calculate width
-  const allLines = [`$ ${cmdLines[0]}`, ...cmdLines.slice(1), ...outLines];
+  const allLines = [...commentLines, `$ ${cmdLines[0]}`, ...cmdLines.slice(1), ...outLines];
   const maxLineLen = Math.max(...allLines.map((l) => l.length), 40, prompt.length + 8);
   const width = Math.min(Math.max(maxLineLen + 4, 52), 76);
 
@@ -64,6 +78,11 @@ export function formatAsciiTerminalCard(options: TerminalCardOptions): string {
   const bottom = `╰${'─'.repeat(width - 2)}╯`;
 
   const bodyRows: string[] = [];
+  if (commentLines.length > 0) {
+    commentLines.forEach((cLine) => {
+      bodyRows.push(`│ ${pad(cLine, width - 4)} │`);
+    });
+  }
   cmdLines.forEach((line, idx) => {
     const prefix = idx === 0 ? '$ ' : '  ';
     bodyRows.push(`│ ${pad(prefix + line, width - 4)} │`);
@@ -93,10 +112,12 @@ export function formatMarkdownTerminal(options: TerminalCardOptions): string {
     options.username && options.hostname
       ? `# [${options.username}@${options.hostname}:${options.cwd || '~'}]\n`
       : '';
+  const commentLines = extractCommentLines(options.comment);
+  const commentBlock = commentLines.length > 0 ? commentLines.join('\n') + '\n' : '';
 
   return [
     '```bash',
-    `${hostInfo}${prompt} ${options.command}`,
+    `${hostInfo}${commentBlock}${prompt} ${options.command}`,
     '',
     options.output.trim(),
     '',
@@ -130,11 +151,12 @@ export function generateSvgTerminalCard(options: TerminalCardOptions): string {
   };
 
   const t = themeColors[options.theme || 'cyberpunk'];
+  const commentLines = extractCommentLines(options.comment);
   const cmdLines = command.split('\n');
   const outLines = output.split('\n');
 
   const lineHeight = 20;
-  const totalLines = cmdLines.length + outLines.length + 3;
+  const totalLines = commentLines.length + cmdLines.length + outLines.length + 3;
   const cardHeight = Math.max(260, 90 + totalLines * lineHeight);
   const cardWidth = 720;
 
@@ -148,6 +170,16 @@ export function generateSvgTerminalCard(options: TerminalCardOptions): string {
 
   let y = 80;
   const textElements: string[] = [];
+
+  // Shell comments
+  if (commentLines.length > 0) {
+    commentLines.forEach((cLine) => {
+      textElements.push(
+        `<text x="32" y="${y}" font-family="monospace" font-size="13" font-style="italic" fill="#8b949e">${escapeXml(cLine)}</text>`
+      );
+      y += lineHeight;
+    });
+  }
 
   // Command lines
   cmdLines.forEach((line, idx) => {

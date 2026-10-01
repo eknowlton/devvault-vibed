@@ -24,14 +24,15 @@ interface TerminalEmulatorModalProps {
   visible: boolean;
   snippet: Snippet | null;
   onClose: () => void;
-  onSaveSnippetOutput?: (
+    onSaveSnippetOutput?: (
     snippetId: string,
     expectedOutput: string,
     duration: string,
     prompt: string,
     simulatedUser?: string,
     simulatedHost?: string,
-    simulatedCwd?: string
+    simulatedCwd?: string,
+    simulatedComment?: string
   ) => void;
 }
 
@@ -76,6 +77,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
     snippet.simulatedPrompt ||
       `${snippet.simulatedUser || 'ethan'}@${snippet.simulatedHost || 'devvault'}:${snippet.simulatedCwd || '~'}$`
   );
+  const [comment, setComment] = useState(snippet.simulatedComment || '');
   const [expectedOutput, setExpectedOutput] = useState(getDefaultOutput(snippet));
   const [duration, setDuration] = useState(snippet.executionDuration || '120ms');
   const [exitCode, setExitCode] = useState(0);
@@ -103,6 +105,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
       setCwd(c);
       setPromptSymbol(s);
       setPrompt(snippet.simulatedPrompt || `${u}@${h}:${c}${s}`);
+      setComment(snippet.simulatedComment || '');
       setExpectedOutput(getDefaultOutput(snippet));
       setDuration(snippet.executionDuration || '120ms');
       restartEmulation();
@@ -215,6 +218,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
       duration,
       exitCode,
       theme,
+      comment,
     });
     const ok = await copyToClipboard(ascii);
     if (ok) showToast('ASCII Terminal Card Copied!');
@@ -231,19 +235,22 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
       output: expectedOutput,
       duration,
       exitCode,
+      comment,
     });
     const ok = await copyToClipboard(md);
     if (ok) showToast('Markdown Codeblock Copied!');
   };
 
   const handleShareTwitter = () => {
-    const text = `⚡ ${snippet.title}\n\n${prompt} ${snippet.content}\n\n${expectedOutput.slice(0, 100)}...\n\n#DevVault #Terminal #CLI`;
+    const commentStr = comment.trim() ? `# ${comment.trim()}\n` : '';
+    const text = `⚡ ${snippet.title}\n\n${commentStr}${prompt} ${snippet.content}\n\n${expectedOutput.slice(0, 100)}...\n\n#DevVault #Terminal #CLI`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     Linking.openURL(url).catch(() => {});
   };
 
   const handleShareLinkedIn = () => {
-    const text = `⚡ ${snippet.title}\n\n${prompt} ${snippet.content}\n\n${expectedOutput}`;
+    const commentStr = comment.trim() ? `# ${comment.trim()}\n` : '';
+    const text = `⚡ ${snippet.title}\n\n${commentStr}${prompt} ${snippet.content}\n\n${expectedOutput}`;
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://github.com')}&summary=${encodeURIComponent(text)}`;
     Linking.openURL(url).catch(() => {});
   };
@@ -262,6 +269,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
         duration,
         exitCode,
         theme,
+        comment,
       });
       const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -287,7 +295,8 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
         prompt,
         username,
         hostname,
-        cwd
+        cwd,
+        comment
       );
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2200);
@@ -456,6 +465,21 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
 
                   {/* Terminal Screen Body */}
                   <View style={styles.terminalBody}>
+                    {/* Shell Comment Line(s) */}
+                    {comment.trim() ? (
+                      <View style={styles.commentBlock}>
+                        {comment
+                          .split('\n')
+                          .map((line) => line.trim())
+                          .filter((l) => l.length > 0)
+                          .map((line, idx) => (
+                            <Text key={idx} style={styles.terminalCommentText}>
+                              {line.startsWith('#') ? line : `# ${line}`}
+                            </Text>
+                          ))}
+                      </View>
+                    ) : null}
+
                     {/* Command line */}
                     <View style={styles.cliLine}>
                       <Text style={styles.promptText}>{prompt} </Text>
@@ -702,6 +726,56 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
                         </TouchableOpacity>
                       ))}
                     </View>
+                  </View>
+
+                  {/* Terminal Comment / Annotation Field */}
+                  <View style={styles.formGroup}>
+                    <View style={styles.labelWithActions}>
+                      <Text style={styles.inputLabel}>TERMINAL COMMENT / ANNOTATION</Text>
+                      <View style={styles.presetButtons}>
+                        {snippet.description ? (
+                          <TouchableOpacity
+                            style={styles.presetBtn}
+                            onPress={() => setComment(snippet.description)}
+                          >
+                            <Text style={styles.presetBtnText}>Use Description</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => setComment('Verify environment before running')}
+                        >
+                          <Text style={styles.presetBtnText}>Note</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => setComment('Requires root / sudo privileges')}
+                        >
+                          <Text style={styles.presetBtnText}>Root Warning</Text>
+                        </TouchableOpacity>
+                        {comment ? (
+                          <TouchableOpacity
+                            style={styles.presetBtn}
+                            onPress={() => setComment('')}
+                          >
+                            <Text style={styles.presetBtnText}>Clear</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    </View>
+
+                    <TextInput
+                      style={styles.textInput}
+                      value={comment}
+                      onChangeText={setComment}
+                      placeholder="e.g. Clean up dangling docker images to reclaim disk space"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <Text style={styles.fieldHelpText}>
+                      Renders as a shell comment (# note) in the terminal emulation preview, ASCII card, markdown, and SVG exports.
+                    </Text>
                   </View>
 
                   {/* Expected Output Editor */}
@@ -1093,6 +1167,16 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 180,
   },
+  commentBlock: {
+    marginBottom: 8,
+    gap: 3,
+  },
+  terminalCommentText: {
+    fontSize: 13,
+    fontFamily: 'monospace',
+    color: '#8b949e',
+    fontStyle: 'italic',
+  },
   cliLine: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1318,6 +1402,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: 'monospace',
     fontSize: 13,
+  },
+  fieldHelpText: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: colors.textMuted,
+    marginTop: 2,
+    lineHeight: 15,
   },
   outputTextArea: {
     minHeight: 120,

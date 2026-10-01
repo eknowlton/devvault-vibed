@@ -17,6 +17,7 @@ export const SEED_SNIPPETS: Snippet[] = [
     expectedOutput: 'Unstaged changes after reset:\nM  src/components/Header.tsx\nM  package.json\n[HEAD detached at bbfc7af] Last commit undone cleanly.',
     executionDuration: '48ms',
     simulatedPrompt: 'ethan@devvault:~/project (main) $',
+    simulatedComment: 'Keep staged changes while rewinding commit HEAD',
     createdAt: Date.now() - 86400000 * 5,
     updatedAt: Date.now() - 86400000 * 5,
   },

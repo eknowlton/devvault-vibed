@@ -167,7 +167,8 @@ export default function App() {
     prompt: string,
     simulatedUser?: string,
     simulatedHost?: string,
-    simulatedCwd?: string
+    simulatedCwd?: string,
+    simulatedComment?: string
   ) => {
     const target = snippets.find((s) => s.id === snippetId);
     if (target) {
@@ -179,6 +180,7 @@ export default function App() {
         simulatedUser,
         simulatedHost,
         simulatedCwd,
+        simulatedComment,
         updatedAt: Date.now(),
       };
       const updatedList = await addOrUpdateSnippet(updated);

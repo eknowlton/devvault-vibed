@@ -98,6 +98,7 @@ Tap **"⚡ Emulate"** on any command or recipe card to open the interactive emul
 
 ```text
 ╭──[ ethan@macbook-pro:~ ]─────────────────────────────────────────╮
+│ # Keep staged changes while rewinding commit HEAD                │
 │ $ git reset --soft HEAD~1                                        │
 ├──────────────────────────────────────────────────────────────────┤
 │ [main 4f1a92e] Changes applied cleanly.                          │
@@ -111,6 +112,7 @@ Tap **"⚡ Emulate"** on any command or recipe card to open the interactive emul
 ### ⚡ Interactive Emulation Features
 - **Real-Time Typing Animation**: Simulates character-by-character shell entry with a blinking cursor (`▋`).
 - **Playback Speed Selector**: Choose between standard speed (`1x`), fast speed (`2x`), or `instant` replay.
+- **Terminal Comments & Annotations**: Add an explanatory shell comment or caution note (e.g. `# Keep staged changes while rewinding commit HEAD`) that renders directly inside the terminal emulation window, ASCII box, markdown codeblock, and SVG exports right above the command prompt.
 - **Execution Lifecycle**: Displays realistic execution states ("Running command..." spinner), simulated latency (`⚡ 120ms`), and exit status badges (`● exit 0` / `✘ exit 1`).
 - **Simulated Stdout / Stderr**: Customize expected command outputs with one-tap presets for **Success messages**, **JSON responses**, and **CLI Tables**. Tap **"Save Output to Recipe"** to persist your custom output directly to your vault database.
 

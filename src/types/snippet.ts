@@ -21,6 +21,7 @@ export interface Snippet {
   simulatedUser?: string;
   simulatedHost?: string;
   simulatedCwd?: string;
+  simulatedComment?: string;
   createdAt: number;
   updatedAt: number;
 }
