@@ -44,10 +44,11 @@ Developers constantly juggle complex CLI flags (`ffmpeg`, `docker`, `kubectl`, `
 | **🧩 Interactive Template Filler** | Auto-detects `{{PARAM}}` and `{{PARAM:default}}` placeholders. Fill values live with one-click copy. |
 | **🎨 Syntax Highlighting** | Zero-dependency high-speed tokenizer for **Bash / Shell**, **TypeScript / JS**, **Python**, **SQL**, and **Dockerfile**. |
 | **📏 Expandable Snippets** | Inline preview with line numbering and collapse toggles for long shell scripts or functions. |
-| **📺 Terminal Emulation & Output** | Interactive CLI playback with typing animation, execution spinner, customizable stdout/stderr output, and latency metrics. |
+| **📺 Terminal Emulation & Output** | Interactive CLI playback with customizable simulated machine user and hostname (`ethan@macbook-pro`, `root@prod-api-01`, `dev@archlinux ❯`), expected stdout/stderr output, typing animations, and latency metrics. |
 | **📤 Social-Friendly Sharing Cards** | One-tap export to Unicode ASCII terminal boxes, Markdown blocks, Twitter/X & LinkedIn intent shares, and vector SVG images. |
-| **🌐 Public vs. Private Visibility** | Mark sensitive credentials or internal company commands as `🔒 Private`, while keeping general snippets `🌐 Public`. |
-| **🚀 Embedded REST API Server** | Lightweight Node.js server exposing dedicated endpoints for `/api/commands`, `/api/recipes`, and `/api/snippets`. |
+| **🌐 Peer Vault Importer** | Connect to another developer's DevVault API server to inspect and import commands, recipes, and snippets with strict automated deduplication. |
+| **🔒 Public vs. Private Visibility** | Mark sensitive credentials or internal company commands as `🔒 Private`, while keeping general snippets `🌐 Public`. |
+| **🚀 Embedded REST API Server** | Lightweight Node.js server exposing dedicated endpoints for `/api/commands`, `/api/recipes`, `/api/snippets`, and remote importing. |
 | **⚡ Terminal Dark Aesthetic** | Tokyo Night / Catppuccin-inspired dark theme with glowing neon custom scrollbars and responsive input focus rings. |
 | **💾 Local-First & Backup** | Works 100% offline via AsyncStorage. Single-click JSON backup, export, and restore. |
 
@@ -148,6 +149,46 @@ curl -s -H "Authorization: Bearer mysecret" http://localhost:4141/api/commands
 curl -s "http://localhost:4141/api/commands?format=raw"
 ```
 
+#### 6. Remotely trigger an import from another DevVault peer:
+```bash
+curl -X POST http://localhost:4141/api/import/remote \
+  -H "Content-Type: application/json" \
+  -d '{"remoteUrl": "http://192.168.1.100:4141", "endpointType": "all"}'
+```
+
+---
+
+## 🌐 Peer Vault Importer & Strict Deduplication
+
+DevVault allows you to share and collaborate with other developers by importing their commands, recipes, or snippets directly from their running DevVault API server without polluting your database with duplicate items.
+
+### 🛡️ How Deduplication Works
+Every incoming item is evaluated through a multi-pass deduplication comparison:
+1. **Exact ID Match**: Prevents duplicate records with identical IDs.
+2. **Normalized Code Match**: Compares the clean script content (stripping carriage returns, blank lines, and whitespace variance). If an identical command already exists in your vault, it is flagged with a note linking the existing entry.
+3. **Title + Content Match**: Verifies matching command names and actions.
+
+### 💻 Using the In-App Modal
+1. Tap **"Import Remote"** in the top navigation bar or sidebar footer.
+2. Enter the remote DevVault API URL (e.g. `http://peer-machine:4141` or `http://localhost:3000`).
+3. Select resource scope: **All Items**, **Commands Only**, **Recipes Only**, or **Snippets Only**.
+4. (Optional) Enter a Bearer token if the remote vault has enabled authentication for private recipes.
+5. Tap **"Connect & Scan Remote Vault"** — DevVault fetches the entries and groups them into `✨ NEW` vs `⚠️ DUPLICATE`.
+6. Select the items you want (or tap **"Select New"**) and click **"Import Selected Items"** to merge them cleanly into your vault.
+
+### ⌨️ Using the CLI Script
+You can also import directly from your shell without opening the UI:
+```bash
+# Preview what would be imported (Dry run)
+node scripts/importFromVault.mjs http://localhost:4141 --dry-run
+
+# Import commands only
+node scripts/importFromVault.mjs http://localhost:4141 --type commands
+
+# Import with remote authentication token
+node scripts/importFromVault.mjs http://peer-host:4141 --token secret-token
+```
+
 ---
 
 ## 🧩 Template Parameters
@@ -193,11 +234,13 @@ cli-programmer-notebook/
 ├── index.ts                         # Expo root component entrypoint
 ├── app.json                         # Expo configuration (icons, splash, bundle config)
 ├── devvault-data.json               # Seed database (14 curated recipes & commands)
+├── scripts/
+│   └── importFromVault.mjs          # CLI utility to scan and import from remote DevVault
 ├── server/
 │   └── apiServer.mjs                # Zero-dependency embedded Node HTTP API server
 └── src/
     ├── components/
-    │   ├── Header.tsx               # Search bar, filter pills, sorting, server launcher
+    │   ├── Header.tsx               # Search bar, filter pills, sorting, server & import buttons
     │   ├── Sidebar.tsx              # Desktop sidebar & mobile drawer library navigation
     │   ├── SnippetCard.tsx          # Card with badges, visibility toggle, copy counters
     │   ├── SyntaxCodeBlock.tsx      # Token-highlighted code block with line numbers & expand
@@ -205,6 +248,8 @@ cli-programmer-notebook/
     │   ├── SnippetEditorModal.tsx   # Create / Edit snippet modal with visibility selector
     │   ├── ServerModal.tsx          # Live API server dashboard & curl recipe copy panel
     │   ├── BackupModal.tsx          # Single-click JSON export, import, and backup
+    │   ├── TerminalEmulatorModal.tsx # Interactive terminal playback & social card modal
+    │   ├── ExternalVaultImportModal.tsx # Remote peer API importer & deduplication review modal
     │   └── TagBadge.tsx             # Interactive filter badge component
     ├── data/
     │   └── seedSnippets.ts          # Default starter dataset (Git, Docker, K8s, Linux, etc.)
@@ -220,6 +265,8 @@ cli-programmer-notebook/
         ├── searchEngine.ts          # Multi-token scoring and filter logic
         ├── syntaxHighlighter.ts     # Regex tokenizer for Bash, TS, Python, SQL, Dockerfile
         ├── templateParser.ts        # {{PARAM:default}} detection and substitution
+        ├── terminalCardFormatter.ts # Unicode ASCII box, markdown, and SVG generator
+        ├── vaultImporter.ts         # Remote DevVault fetcher & deduplication comparator
         └── clipboard.ts             # Cross-platform clipboard helper
 ```
 

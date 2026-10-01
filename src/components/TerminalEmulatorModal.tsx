@@ -24,7 +24,15 @@ interface TerminalEmulatorModalProps {
   visible: boolean;
   snippet: Snippet | null;
   onClose: () => void;
-  onSaveSnippetOutput?: (snippetId: string, expectedOutput: string, duration: string, prompt: string) => void;
+  onSaveSnippetOutput?: (
+    snippetId: string,
+    expectedOutput: string,
+    duration: string,
+    prompt: string,
+    simulatedUser?: string,
+    simulatedHost?: string,
+    simulatedCwd?: string
+  ) => void;
 }
 
 type TabMode = 'preview' | 'customize' | 'share';
@@ -58,7 +66,16 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   };
 
   const [activeTab, setActiveTab] = useState<TabMode>('preview');
-  const [prompt, setPrompt] = useState(snippet.simulatedPrompt || 'dev@vault:~$');
+  const [username, setUsername] = useState(snippet.simulatedUser || 'ethan');
+  const [hostname, setHostname] = useState(snippet.simulatedHost || 'devvault');
+  const [cwd, setCwd] = useState(snippet.simulatedCwd || '~');
+  const [promptSymbol, setPromptSymbol] = useState(
+    (snippet.simulatedUser || 'ethan') === 'root' ? '#' : '$'
+  );
+  const [prompt, setPrompt] = useState(
+    snippet.simulatedPrompt ||
+      `${snippet.simulatedUser || 'ethan'}@${snippet.simulatedHost || 'devvault'}:${snippet.simulatedCwd || '~'}$`
+  );
   const [expectedOutput, setExpectedOutput] = useState(getDefaultOutput(snippet));
   const [duration, setDuration] = useState(snippet.executionDuration || '120ms');
   const [exitCode, setExitCode] = useState(0);
@@ -77,12 +94,50 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   // Sync state when snippet changes
   useEffect(() => {
     if (snippet) {
-      setPrompt(snippet.simulatedPrompt || 'dev@vault:~$');
+      const u = snippet.simulatedUser || 'ethan';
+      const h = snippet.simulatedHost || 'devvault';
+      const c = snippet.simulatedCwd || '~';
+      const s = u === 'root' ? '#' : '$';
+      setUsername(u);
+      setHostname(h);
+      setCwd(c);
+      setPromptSymbol(s);
+      setPrompt(snippet.simulatedPrompt || `${u}@${h}:${c}${s}`);
       setExpectedOutput(getDefaultOutput(snippet));
       setDuration(snippet.executionDuration || '120ms');
       restartEmulation();
     }
   }, [snippet?.id, visible]);
+
+  const applyMachinePreset = (user: string, host: string, dir: string, sym: string) => {
+    setUsername(user);
+    setHostname(host);
+    setCwd(dir);
+    setPromptSymbol(sym);
+    setPrompt(`${user}@${host}:${dir}${sym}`);
+  };
+
+  const handleUsernameChange = (val: string) => {
+    setUsername(val);
+    const sym = val.trim() === 'root' ? '#' : promptSymbol;
+    if (val.trim() === 'root' && promptSymbol === '$') setPromptSymbol('#');
+    setPrompt(`${val}@${hostname}:${cwd}${sym}`);
+  };
+
+  const handleHostnameChange = (val: string) => {
+    setHostname(val);
+    setPrompt(`${username}@${val}:${cwd}${promptSymbol}`);
+  };
+
+  const handleCwdChange = (val: string) => {
+    setCwd(val);
+    setPrompt(`${username}@${hostname}:${val}${promptSymbol}`);
+  };
+
+  const handleSymbolChange = (sym: string) => {
+    setPromptSymbol(sym);
+    setPrompt(`${username}@${hostname}:${cwd}${sym}`);
+  };
 
   // Cursor blink interval
   useEffect(() => {
@@ -149,8 +204,12 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
 
   const handleCopyAscii = async () => {
     const ascii = formatAsciiTerminalCard({
-      title: snippet.title,
+      title: `${username}@${hostname}: ${snippet.title}`,
       prompt,
+      username,
+      hostname,
+      cwd,
+      promptSymbol,
       command: snippet.content,
       output: expectedOutput,
       duration,
@@ -164,6 +223,10 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   const handleCopyMarkdown = async () => {
     const md = formatMarkdownTerminal({
       prompt,
+      username,
+      hostname,
+      cwd,
+      promptSymbol,
       command: snippet.content,
       output: expectedOutput,
       duration,
@@ -174,13 +237,13 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   };
 
   const handleShareTwitter = () => {
-    const text = `⚡ ${snippet.title}\n\n$ ${snippet.content}\n\n${expectedOutput.slice(0, 100)}...\n\n#DevVault #Terminal #CLI`;
+    const text = `⚡ ${snippet.title}\n\n${prompt} ${snippet.content}\n\n${expectedOutput.slice(0, 100)}...\n\n#DevVault #Terminal #CLI`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     Linking.openURL(url).catch(() => {});
   };
 
   const handleShareLinkedIn = () => {
-    const text = `⚡ ${snippet.title}\n\n$ ${snippet.content}\n\n${expectedOutput}`;
+    const text = `⚡ ${snippet.title}\n\n${prompt} ${snippet.content}\n\n${expectedOutput}`;
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://github.com')}&summary=${encodeURIComponent(text)}`;
     Linking.openURL(url).catch(() => {});
   };
@@ -188,8 +251,12 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   const handleDownloadSvg = () => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const svg = generateSvgTerminalCard({
-        title: snippet.title,
+        title: `${username}@${hostname}: ${cwd} (zsh)`,
         prompt,
+        username,
+        hostname,
+        cwd,
+        promptSymbol,
         command: snippet.content,
         output: expectedOutput,
         duration,
@@ -213,10 +280,18 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
 
   const handleSaveOutput = () => {
     if (onSaveSnippetOutput) {
-      onSaveSnippetOutput(snippet.id, expectedOutput, duration, prompt);
+      onSaveSnippetOutput(
+        snippet.id,
+        expectedOutput,
+        duration,
+        prompt,
+        username,
+        hostname,
+        cwd
+      );
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2200);
-      showToast('Saved default output to recipe!');
+      showToast('Saved output & machine profile to recipe!');
     }
   };
 
@@ -363,7 +438,9 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
                       <View style={[styles.trafficDot, { backgroundColor: '#27c93f' }]} />
                     </View>
 
-                    <Text style={styles.terminalTitleText}>zsh — 80x24</Text>
+                    <Text style={styles.terminalTitleText} numberOfLines={1}>
+                      {username}@{hostname}: {cwd} (zsh)
+                    </Text>
 
                     <View style={styles.terminalStatusPills}>
                       <View style={styles.exitStatusPill}>
@@ -471,10 +548,113 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
             {activeTab === 'customize' && (
               <View style={styles.tabContent}>
                 <View style={styles.settingsGrid}>
+                  {/* Machine Presets Header */}
+                  <View style={styles.formGroup}>
+                    <View style={styles.labelWithActions}>
+                      <Text style={styles.inputLabel}>SIMULATED ENVIRONMENT & HOST</Text>
+                      <View style={styles.presetButtons}>
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => applyMachinePreset('ethan', 'macbook-pro', '~', '$')}
+                        >
+                          <Text style={styles.presetBtnText}>MacBook</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => applyMachinePreset('root', 'prod-api-01', '/etc', '#')}
+                        >
+                          <Text style={styles.presetBtnText}>Prod Root</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => applyMachinePreset('ubuntu', 'aws-ec2', '~/app', '$')}
+                        >
+                          <Text style={styles.presetBtnText}>AWS EC2</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.presetBtn}
+                          onPress={() => applyMachinePreset('dev', 'archlinux', '~', '❯')}
+                        >
+                          <Text style={styles.presetBtnText}>Starship ❯</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Username & Hostname Row */}
+                  <View style={styles.rowTwoCols}>
+                    <View style={styles.formGroup}>
+                      <Text style={styles.inputLabel}>USERNAME</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={username}
+                        onChangeText={handleUsernameChange}
+                        placeholder="e.g. ethan, root, dev"
+                        placeholderTextColor={colors.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <Text style={styles.inputLabel}>HOSTNAME</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={hostname}
+                        onChangeText={handleHostnameChange}
+                        placeholder="e.g. devvault, macbook, k8s-node"
+                        placeholderTextColor={colors.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+                  </View>
+
+                  {/* CWD and Prompt Symbol Row */}
+                  <View style={styles.rowTwoCols}>
+                    <View style={styles.formGroup}>
+                      <Text style={styles.inputLabel}>WORKING DIR (CWD)</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={cwd}
+                        onChangeText={handleCwdChange}
+                        placeholder="e.g. ~, ~/projects, /etc"
+                        placeholderTextColor={colors.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <Text style={styles.inputLabel}>PROMPT SYMBOL</Text>
+                      <View style={styles.symbolSelectorRow}>
+                        {['$', '#', '❯', '>'].map((sym) => (
+                          <TouchableOpacity
+                            key={sym}
+                            style={[
+                              styles.symbolChip,
+                              promptSymbol === sym && styles.symbolChipActive,
+                            ]}
+                            onPress={() => handleSymbolChange(sym)}
+                          >
+                            <Text
+                              style={[
+                                styles.symbolChipText,
+                                promptSymbol === sym && styles.symbolChipTextActive,
+                              ]}
+                            >
+                              {sym}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+
                   {/* Prompt & Duration Row */}
                   <View style={styles.rowTwoCols}>
                     <View style={styles.formGroup}>
-                      <Text style={styles.inputLabel}>SHELL PROMPT</Text>
+                      <Text style={styles.inputLabel}>FULL SHELL PROMPT</Text>
                       <TextInput
                         style={styles.textInput}
                         value={prompt}
@@ -482,6 +662,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
                         placeholder="e.g. dev@vault:~$ or ❯"
                         placeholderTextColor={colors.textMuted}
                         autoCapitalize="none"
+                        autoCorrect={false}
                       />
                     </View>
 
@@ -1098,6 +1279,33 @@ const styles = StyleSheet.create({
   presetBtnText: {
     fontSize: 10,
     fontFamily: 'monospace',
+    color: colors.primary,
+  },
+  symbolSelectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    height: 40,
+  },
+  symbolChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  symbolChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(88, 166, 255, 0.15)',
+  },
+  symbolChipText: {
+    fontSize: 13,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  symbolChipTextActive: {
     color: colors.primary,
   },
   textInput: {

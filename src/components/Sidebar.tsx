@@ -19,6 +19,7 @@ interface SidebarProps {
   onOpenNewSnippet: () => void;
   onOpenBackup: () => void;
   onOpenServer: () => void;
+  onOpenImportRemote?: () => void;
   isMobileDrawer?: boolean;
   onCloseDrawer?: () => void;
 }
@@ -30,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNewSnippet,
   onOpenBackup,
   onOpenServer,
+  onOpenImportRemote,
   isMobileDrawer = false,
   onCloseDrawer,
 }) => {
@@ -329,6 +331,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Tools */}
       <View style={styles.footerTools}>
+        {onOpenImportRemote && (
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => {
+              onOpenImportRemote();
+              if (isMobileDrawer && onCloseDrawer) onCloseDrawer();
+            }}
+          >
+            <Ionicons name="cloud-download-outline" size={16} color={colors.accentGreen} />
+            <Text style={[styles.toolBtnText, { color: colors.accentGreen, fontWeight: '700' }]}>
+              Import Remote Vault
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.toolBtn}
           onPress={() => {

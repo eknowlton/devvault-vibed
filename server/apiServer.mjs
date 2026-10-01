@@ -183,6 +183,55 @@ function filterList(list, { query, tag, category, platform, authorized }) {
   return filtered;
 }
 
+// Deduplication helpers
+function normalizeContent(str) {
+  if (!str) return '';
+  return str
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .join('\n')
+    .toLowerCase();
+}
+
+function checkDuplicateSnippet(incoming, existingList) {
+  if (!incoming.content || !incoming.title) return { isDuplicate: false };
+  const normIncomingContent = normalizeContent(incoming.content);
+  const normIncomingTitle = incoming.title.trim().toLowerCase();
+
+  // 1. ID check
+  if (incoming.id && existingList.some((s) => s.id === incoming.id)) {
+    return { isDuplicate: true, reason: 'Duplicate ID' };
+  }
+
+  // 2. Exact content check
+  const contentMatch = existingList.find((s) => normalizeContent(s.content) === normIncomingContent);
+  if (contentMatch) {
+    return {
+      isDuplicate: true,
+      reason: `Identical script content already exists in '${contentMatch.title}'`,
+      matched: contentMatch.title,
+    };
+  }
+
+  // 3. Title + content check
+  const titleAndContentMatch = existingList.find(
+    (s) =>
+      s.title.trim().toLowerCase() === normIncomingTitle &&
+      normalizeContent(s.content) === normIncomingContent
+  );
+  if (titleAndContentMatch) {
+    return {
+      isDuplicate: true,
+      reason: `Duplicate title and content in '${titleAndContentMatch.title}'`,
+      matched: titleAndContentMatch.title,
+    };
+  }
+
+  return { isDuplicate: false };
+}
+
 // Send JSON Response Helper
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
@@ -352,6 +401,9 @@ const server = http.createServer(async (req, res) => {
         expectedOutput: item.expectedOutput ? String(item.expectedOutput) : undefined,
         executionDuration: item.executionDuration ? String(item.executionDuration) : undefined,
         simulatedPrompt: item.simulatedPrompt ? String(item.simulatedPrompt) : undefined,
+        simulatedUser: item.simulatedUser ? String(item.simulatedUser) : undefined,
+        simulatedHost: item.simulatedHost ? String(item.simulatedHost) : undefined,
+        simulatedCwd: item.simulatedCwd ? String(item.simulatedCwd) : undefined,
         copyCount: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -464,6 +516,9 @@ const server = http.createServer(async (req, res) => {
         expectedOutput: item.expectedOutput ? String(item.expectedOutput) : undefined,
         executionDuration: item.executionDuration ? String(item.executionDuration) : undefined,
         simulatedPrompt: item.simulatedPrompt ? String(item.simulatedPrompt) : undefined,
+        simulatedUser: item.simulatedUser ? String(item.simulatedUser) : undefined,
+        simulatedHost: item.simulatedHost ? String(item.simulatedHost) : undefined,
+        simulatedCwd: item.simulatedCwd ? String(item.simulatedCwd) : undefined,
         copyCount: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -583,6 +638,9 @@ const server = http.createServer(async (req, res) => {
         expectedOutput: item.expectedOutput ? String(item.expectedOutput) : undefined,
         executionDuration: item.executionDuration ? String(item.executionDuration) : undefined,
         simulatedPrompt: item.simulatedPrompt ? String(item.simulatedPrompt) : undefined,
+        simulatedUser: item.simulatedUser ? String(item.simulatedUser) : undefined,
+        simulatedHost: item.simulatedHost ? String(item.simulatedHost) : undefined,
+        simulatedCwd: item.simulatedCwd ? String(item.simulatedCwd) : undefined,
         copyCount: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -619,6 +677,94 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { message: `Snippet '${id}' deleted successfully` });
   }
 
+  // 16. Remote import endpoint: POST /api/import/remote
+  if (pathname === '/api/import/remote' && req.method === 'POST') {
+    if (!allowWrite && !authorized) {
+      return sendJson(res, 403, { error: 'Forbidden: Writing is disabled or requires authentication token.' });
+    }
+
+    try {
+      const body = await parseBody(req);
+      const remoteUrl = body.remoteUrl ? body.remoteUrl.trim().replace(/\/+$/, '') : null;
+      if (!remoteUrl) {
+        return sendJson(res, 400, { error: 'remoteUrl is required in request body' });
+      }
+
+      const endpointType = body.endpointType || 'all';
+      let remotePath = '/api/snippets';
+      if (endpointType === 'commands') remotePath = '/api/commands';
+      else if (endpointType === 'recipes') remotePath = '/api/recipes';
+      else if (endpointType === 'snippets') remotePath = '/api/snippets?type=snippet';
+
+      const target = `${remoteUrl}${remotePath}`;
+      const headers = { Accept: 'application/json' };
+      if (body.token) headers['Authorization'] = `Bearer ${body.token}`;
+
+      const remoteRes = await fetch(target, { headers });
+      if (!remoteRes.ok) {
+        return sendJson(res, 502, {
+          error: `Remote server error: HTTP ${remoteRes.status} ${remoteRes.statusText}`,
+        });
+      }
+
+      const remoteData = await remoteRes.json();
+      let rawList = [];
+      if (Array.isArray(remoteData)) rawList = remoteData;
+      else if (Array.isArray(remoteData.snippets)) rawList = remoteData.snippets;
+      else if (Array.isArray(remoteData.commands)) rawList = remoteData.commands;
+      else if (Array.isArray(remoteData.recipes)) rawList = remoteData.recipes;
+
+      const snippets = loadSnippets();
+      let duplicatesSkipped = 0;
+      const imported = [];
+      const duplicateDetails = [];
+
+      for (const item of rawList) {
+        if (!item || !item.title || !item.content) continue;
+        const dupCheck = checkDuplicateSnippet(item, snippets);
+        if (dupCheck.isDuplicate) {
+          duplicatesSkipped++;
+          duplicateDetails.push({ title: item.title, reason: dupCheck.reason });
+          continue;
+        }
+
+        const newId =
+          item.id && !snippets.some((s) => s.id === item.id)
+            ? item.id
+            : `import-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+        const tags = Array.isArray(item.tags) ? [...item.tags] : [];
+        if (!tags.includes('imported')) tags.push('imported');
+
+        const newSnippet = {
+          ...item,
+          id: newId,
+          tags,
+          isPrivate: false,
+          copyCount: 0,
+          createdAt: item.createdAt || Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        snippets.unshift(newSnippet);
+        imported.push(newSnippet);
+      }
+
+      saveSnippets(snippets);
+
+      return sendJson(res, 200, {
+        message: `Import completed: ${imported.length} new items imported, ${duplicatesSkipped} duplicates skipped.`,
+        scannedCount: rawList.length,
+        importedCount: imported.length,
+        duplicatesSkipped,
+        duplicateDetails,
+        imported,
+      });
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
   // 404 Not Found
   return sendJson(res, 404, {
     error: 'Endpoint not found',
@@ -638,6 +784,7 @@ const server = http.createServer(async (req, res) => {
       'GET /api/raw/:id',
       'POST /api/snippets',
       'DELETE /api/snippets/:id',
+      'POST /api/import/remote',
     ],
   });
 });

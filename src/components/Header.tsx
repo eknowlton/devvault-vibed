@@ -19,6 +19,7 @@ interface HeaderProps {
   isMobileLayout: boolean;
   onOpenNewSnippet: () => void;
   onOpenServer: () => void;
+  onOpenImportRemote?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   isMobileLayout,
   onOpenNewSnippet,
   onOpenServer,
+  onOpenImportRemote,
 }) => {
   const inputRef = useRef<TextInput>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -153,6 +155,18 @@ export const Header: React.FC<HeaderProps> = ({
           <Ionicons name="server-outline" size={15} color={colors.primary} />
           {!isMobileLayout && <Text style={styles.serverBtnText}>API Server</Text>}
         </TouchableOpacity>
+
+        {/* Remote Import Button */}
+        {onOpenImportRemote && (
+          <TouchableOpacity
+            style={styles.importRemoteBtn}
+            onPress={onOpenImportRemote}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cloud-download-outline" size={15} color={colors.accentGreen} />
+            {!isMobileLayout && <Text style={styles.importRemoteBtnText}>Import Remote</Text>}
+          </TouchableOpacity>
+        )}
 
         {/* Mobile New Snippet Button */}
         {isMobileLayout && (
@@ -359,6 +373,23 @@ const styles = StyleSheet.create({
   serverBtnText: {
     fontSize: 12,
     color: colors.primary,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+  },
+  importRemoteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(63, 185, 80, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(63, 185, 80, 0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 42,
+  },
+  importRemoteBtnText: {
+    fontSize: 12,
+    color: colors.accentGreen,
     fontFamily: 'monospace',
     fontWeight: '700',
   },

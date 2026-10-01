@@ -31,6 +31,7 @@ import { ParameterFillerModal } from './src/components/ParameterFillerModal';
 import { BackupModal } from './src/components/BackupModal';
 import { ServerModal } from './src/components/ServerModal';
 import { TerminalEmulatorModal } from './src/components/TerminalEmulatorModal';
+import { ExternalVaultImportModal } from './src/components/ExternalVaultImportModal';
 import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
 
 // Initialize web darkmode scrollbar and focus styles
@@ -67,6 +68,7 @@ export default function App() {
 
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isServerOpen, setIsServerOpen] = useState(false);
+  const [isImportRemoteOpen, setIsImportRemoteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Load initial data
@@ -162,7 +164,10 @@ export default function App() {
     snippetId: string,
     expectedOutput: string,
     duration: string,
-    prompt: string
+    prompt: string,
+    simulatedUser?: string,
+    simulatedHost?: string,
+    simulatedCwd?: string
   ) => {
     const target = snippets.find((s) => s.id === snippetId);
     if (target) {
@@ -171,12 +176,19 @@ export default function App() {
         expectedOutput,
         executionDuration: duration,
         simulatedPrompt: prompt,
+        simulatedUser,
+        simulatedHost,
+        simulatedCwd,
         updatedAt: Date.now(),
       };
       const updatedList = await addOrUpdateSnippet(updated);
       setSnippets(updatedList);
       setEmulatorSnippet(updated);
     }
+  };
+
+  const handleImportComplete = (updatedSnippets: Snippet[]) => {
+    setSnippets(updatedSnippets);
   };
 
   return (
@@ -193,6 +205,7 @@ export default function App() {
             onOpenNewSnippet={() => handleOpenEditor()}
             onOpenBackup={() => setIsBackupOpen(true)}
             onOpenServer={() => setIsServerOpen(true)}
+            onOpenImportRemote={() => setIsImportRemoteOpen(true)}
           />
         )}
 
@@ -206,6 +219,7 @@ export default function App() {
             isMobileLayout={!isDesktop}
             onOpenNewSnippet={() => handleOpenEditor()}
             onOpenServer={() => setIsServerOpen(true)}
+            onOpenImportRemote={() => setIsImportRemoteOpen(true)}
           />
 
           {/* Snippet List */}
@@ -281,6 +295,7 @@ export default function App() {
               onOpenNewSnippet={() => handleOpenEditor()}
               onOpenBackup={() => setIsBackupOpen(true)}
               onOpenServer={() => setIsServerOpen(true)}
+              onOpenImportRemote={() => setIsImportRemoteOpen(true)}
               isMobileDrawer={true}
               onCloseDrawer={() => setIsMobileDrawerOpen(false)}
             />
@@ -336,6 +351,14 @@ export default function App() {
           setEmulatorSnippet(null);
         }}
         onSaveSnippetOutput={handleSaveSnippetOutput}
+      />
+
+      {/* Remote DevVault Peer Importer Modal */}
+      <ExternalVaultImportModal
+        visible={isImportRemoteOpen}
+        existingSnippets={snippets}
+        onClose={() => setIsImportRemoteOpen(false)}
+        onImportComplete={handleImportComplete}
       />
     </SafeAreaView>
   );

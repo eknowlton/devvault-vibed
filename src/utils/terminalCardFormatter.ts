@@ -85,14 +85,18 @@ export function formatAsciiTerminalCard(options: TerminalCardOptions): string {
  * Generates a GitHub / Markdown formatted code block.
  */
 export function formatMarkdownTerminal(options: TerminalCardOptions): string {
-  const prompt = options.prompt || '$';
+  const prompt = options.prompt || buildPromptString(options);
   const duration = options.duration || '120ms';
   const exitCode = options.exitCode ?? 0;
   const exitStatus = exitCode === 0 ? 'exit 0' : `exit ${exitCode}`;
+  const hostInfo =
+    options.username && options.hostname
+      ? `# [${options.username}@${options.hostname}:${options.cwd || '~'}]\n`
+      : '';
 
   return [
     '```bash',
-    `${prompt} ${options.command}`,
+    `${hostInfo}${prompt} ${options.command}`,
     '',
     options.output.trim(),
     '',
@@ -105,12 +109,17 @@ export function formatMarkdownTerminal(options: TerminalCardOptions): string {
  * Generates a standalone SVG image card with macOS window controls and vibrant terminal styling.
  */
 export function generateSvgTerminalCard(options: TerminalCardOptions): string {
-  const prompt = options.prompt || 'dev@vault:~$';
+  const prompt = options.prompt || buildPromptString(options);
   const command = options.command.trim();
   const output = (options.output || '✔ Command completed successfully.').trim();
   const duration = options.duration || '120ms';
   const exitCode = options.exitCode ?? 0;
   const exitStatus = exitCode === 0 ? 'exit 0' : `exit ${exitCode}`;
+  const windowTitle =
+    options.title ||
+    (options.username && options.hostname
+      ? `${options.username}@${options.hostname}: ${options.cwd || '~'} (zsh)`
+      : 'DevVault Terminal Emulation');
 
   const themeColors = {
     cyberpunk: { bg: '#0d1117', border: '#58a6ff', glow: '#bc8cff', prompt: '#56d4dd' },
@@ -143,9 +152,10 @@ export function generateSvgTerminalCard(options: TerminalCardOptions): string {
   // Command lines
   cmdLines.forEach((line, idx) => {
     if (idx === 0) {
+      const promptSpacing = prompt.endsWith(' ') ? prompt : `${prompt} `;
       textElements.push(
-        `<text x="32" y="${y}" font-family="monospace" font-size="13" font-weight="bold" fill="${t.prompt}">${escapeXml(prompt)} </text>` +
-        `<text x="${32 + (prompt.length + 1) * 8}" y="${y}" font-family="monospace" font-size="13" font-weight="600" fill="#f0f6fc">${escapeXml(line)}</text>`
+        `<text x="32" y="${y}" font-family="monospace" font-size="13" font-weight="bold" fill="${t.prompt}">${escapeXml(promptSpacing)}</text>` +
+        `<text x="${32 + promptSpacing.length * 8}" y="${y}" font-family="monospace" font-size="13" font-weight="600" fill="#f0f6fc">${escapeXml(line)}</text>`
       );
     } else {
       textElements.push(
