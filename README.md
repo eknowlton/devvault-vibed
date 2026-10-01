@@ -139,6 +139,45 @@ Customize the simulated environment to match whatever machine you want to showca
 
 ---
 
+## 💻 Code Snippet Social Cards & IDE Mockups
+
+While commands have their own Terminal Emulator, code snippets (`type === 'snippet'`) feature a dedicated **IDE Social Card Generator** designed to showcase functions, algorithms, and components in a stylish code editor mockup (like Ray.so / Carbon).
+
+Tap **"🖼️ IDE Card"** on any code snippet card to launch the editor preview.
+
+```text
+╭──[ 📄 usedebounce-hook.ts ]───────────────────────────────────────╮
+│ // 💡 Custom React Debounce Hook                                  │
+│ // Delays updating value until user stops typing.                 │
+├───────────────────────────────────────────────────────────────────┤
+│ 1 │ import { useState, useEffect } from 'react';                  │
+│ 2 │                                                               │
+│ 3 │ export function useDebounce<T>(value: T, delay: number): T {  │
+│ 4 │   const [debounced, setDebounced] = useState<T>(value);       │
+│ 5 │   return debounced;                                           │
+│ 6 │ }                                                             │
+├───────────────────────────────────────────────────────────────────┤
+│ [ TYPESCRIPT • 6 lines • DevVault IDE ]                           │
+╰───────────────────────────────────────────────────────────────────╯
+```
+
+### 🎨 IDE Mockup Features
+- **IDE Window Chrome**: macOS traffic light buttons (`🔴 🟡 🟢`), active editor tab with file icon (`📄 usedebounce.ts`), close button, and language badge.
+- **Syntax Highlighting Engine**: Full language-aware syntax tokenization (TypeScript, JavaScript, Python, SQL, Dockerfile, Bash, JSON, etc.) with keyword, type, function, string, comment, and operator colors.
+- **Annotated Description Docstring**: Optional header card rendering notes and explanations above the code block.
+- **Line Numbers Gutter**: Vertical line number column with subtle divider border.
+- **6 Popular IDE Themes**:
+  - 🔵 **VS Code Dark**: Official Visual Studio Code Dark+ aesthetic
+  - 🟣 **One Dark Pro**: Atom's iconic syntax palette
+  - 🧛 **Dracula**: High-contrast vampire palette with neon accents
+  - ❄️ **Nord Frost**: Arctic blue and icy dark slate
+  - ⚡ **Cyberpunk Neon**: Vivid cyan and purple cyberpunk glow
+  - 🌑 **Obsidian Minimal**: Clean, distraction-free monochrome
+- **Wallpaper Backdrop Toggle**: Optional soft gradient canvas padding around the floating IDE window with realistic drop shadows.
+- **Vector SVG Export**: Download retina-ready, scalable `.svg` image files directly in the browser or copy raw SVG markup to clipboard.
+
+---
+
 ## 📡 Embedded REST API Server
 
 DevVault includes a built-in, standalone Node.js HTTP server ([`server/apiServer.mjs`](server/apiServer.mjs)) with **zero external dependencies**. It allows other machines, teammates, or shell terminals to query your command library.

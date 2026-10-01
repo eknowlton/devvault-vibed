@@ -32,6 +32,7 @@ import { BackupModal } from './src/components/BackupModal';
 import { ServerModal } from './src/components/ServerModal';
 import { TerminalEmulatorModal } from './src/components/TerminalEmulatorModal';
 import { ExternalVaultImportModal } from './src/components/ExternalVaultImportModal';
+import { CodeSnippetCardModal } from './src/components/CodeSnippetCardModal';
 import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
 
 // Initialize web darkmode scrollbar and focus styles
@@ -65,6 +66,9 @@ export default function App() {
 
   const [isEmulatorOpen, setIsEmulatorOpen] = useState(false);
   const [emulatorSnippet, setEmulatorSnippet] = useState<Snippet | null>(null);
+
+  const [isCodeCardOpen, setIsCodeCardOpen] = useState(false);
+  const [codeCardSnippet, setCodeCardSnippet] = useState<Snippet | null>(null);
 
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isServerOpen, setIsServerOpen] = useState(false);
@@ -163,6 +167,14 @@ export default function App() {
     setIsEmulatorOpen(true);
   };
 
+  const handleOpenCodeCard = (snippet: Snippet) => {
+    if (snippet.type !== 'snippet') {
+      return;
+    }
+    setCodeCardSnippet(snippet);
+    setIsCodeCardOpen(true);
+  };
+
   const handleSaveSnippetOutput = async (
     snippetId: string,
     expectedOutput: string,
@@ -255,6 +267,7 @@ export default function App() {
                 onDelete={handleDelete}
                 onOpenFiller={handleOpenFiller}
                 onOpenEmulator={handleOpenEmulator}
+                onOpenCodeCard={handleOpenCodeCard}
               />
             )}
             ListEmptyComponent={
@@ -356,6 +369,16 @@ export default function App() {
           setEmulatorSnippet(null);
         }}
         onSaveSnippetOutput={handleSaveSnippetOutput}
+      />
+
+      {/* Code Snippet Social Card Modal */}
+      <CodeSnippetCardModal
+        visible={isCodeCardOpen}
+        snippet={codeCardSnippet}
+        onClose={() => {
+          setIsCodeCardOpen(false);
+          setCodeCardSnippet(null);
+        }}
       />
 
       {/* Remote DevVault Peer Importer Modal */}

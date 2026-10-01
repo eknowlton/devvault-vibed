@@ -24,6 +24,7 @@ interface SnippetCardProps {
   onDelete: (id: string) => void;
   onOpenFiller: (snippet: Snippet) => void;
   onOpenEmulator?: (snippet: Snippet) => void;
+  onOpenCodeCard?: (snippet: Snippet) => void;
 }
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({
@@ -37,6 +38,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   onDelete,
   onOpenFiller,
   onOpenEmulator,
+  onOpenCodeCard,
 }) => {
   const [copiedQuick, setCopiedQuick] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
@@ -194,6 +196,17 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
             </TouchableOpacity>
           )}
 
+          {onOpenCodeCard && snippet.type === 'snippet' && (
+            <TouchableOpacity
+              style={styles.codeCardBtn}
+              onPress={() => onOpenCodeCard(snippet)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="image-outline" size={13} color={colors.secondary} />
+              <Text style={styles.codeCardBtnText}>IDE Card</Text>
+            </TouchableOpacity>
+          )}
+
           {isParameterized ? (
             <TouchableOpacity
               style={styles.fillerBtn}
@@ -320,6 +333,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.accentGreen,
+    fontFamily: 'monospace',
+  },
+  codeCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(188, 140, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(188, 140, 255, 0.35)',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  codeCardBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.secondary,
     fontFamily: 'monospace',
   },
   fillerBtn: {
