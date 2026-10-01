@@ -100,6 +100,25 @@ npm run ios      # iOS Simulator (macOS)
 npm run android  # Android Emulator
 ```
 
+### 4. Running Tests
+```bash
+npm test         # Run all 9 unit & integration test suites
+npm run test:all # Run TypeScript compilation check + test suites
+```
+
+### 5. Automated CI & GitHub Releases
+- **Continuous Integration (`.github/workflows/ci.yml`)**: Automatically runs typecheck (`tsc --noEmit`) and all 9 test suites on pushes and pull requests to `master`.
+- **Automated Releases (`.github/workflows/release.yml`)**: When tests pass, GitHub Actions compiles native desktop binaries across Windows, Linux, and macOS, publishing them to GitHub Repo Releases:
+  ```bash
+  # Push a version tag to trigger release build & publish:
+  git tag v1.0.0
+  git push origin v1.0.0
+  ```
+  Distributables attached to GitHub Releases:
+  - 🪟 **Windows**: `.exe` (NSIS installer & portable standalone)
+  - 🐧 **Linux**: `.AppImage`, `.deb`, and `.tar.gz`
+  - 🍎 **macOS**: `.dmg` and `.zip`
+
 ---
 
 ## 📺 Terminal Emulation & Social Sharing Cards

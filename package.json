@@ -32,6 +32,8 @@
     "web": "expo start --web",
     "api:start": "node server/apiServer.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "node tests/runAllTests.mjs",
+    "test:all": "npm run typecheck && npm test",
     "build:web": "expo export --platform web",
     "desktop:start": "npm run build:web && electron electron/main.mjs --no-sandbox",
     "desktop:dev": "electron electron/main.mjs --no-sandbox --dev",

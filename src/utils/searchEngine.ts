@@ -1,4 +1,4 @@
-import { FilterState, Snippet } from '../types/snippet';
+import { type FilterState, type Snippet } from '../types/snippet';
 
 export function filterAndSortSnippets(
   snippets: Snippet[],

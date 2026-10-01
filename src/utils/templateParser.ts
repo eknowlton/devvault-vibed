@@ -1,4 +1,4 @@
-import { ParameterPlaceholder } from '../types/snippet';
+import { type ParameterPlaceholder } from '../types/snippet';
 
 const PARAM_REGEX = /\{\{([a-zA-Z0-9_-]+)(?::([^}]*))?\}\}/g;
 
@@ -9,6 +9,7 @@ const PARAM_REGEX = /\{\{([a-zA-Z0-9_-]+)(?::([^}]*))?\}\}/g;
  * {{PORT:8080}} -> name: PORT, defaultValue: "8080"
  */
 export function extractPlaceholders(content: string): ParameterPlaceholder[] {
+  PARAM_REGEX.lastIndex = 0;
   const placeholders: ParameterPlaceholder[] = [];
   const seen = new Set<string>();
 
@@ -43,6 +44,7 @@ export function renderTemplate(
   content: string,
   values: Record<string, string>
 ): string {
+  PARAM_REGEX.lastIndex = 0;
   return content.replace(PARAM_REGEX, (_fullMatch, name, defaultValue) => {
     const provided = values[name];
     if (provided !== undefined && provided.trim() !== '') {

@@ -1,0 +1,153 @@
+name: Build & Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (e.g. v1.0.0)'
+        required: false
+        default: ''
+      draft:
+        description: 'Create as draft release'
+        type: boolean
+        required: false
+        default: false
+      prerelease:
+        description: 'Create as pre-release'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # Stage 1: Verify tests and typechecks pass before building any releases
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Test Suite
+        run: npm test
+
+  # Stage 2: Multiplatform Build (Windows, Linux, macOS)
+  build:
+    name: Build Desktop (${{ matrix.platform }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            cmd: npm run build:win
+          - os: ubuntu-latest
+            platform: linux
+            cmd: npm run build:linux
+          - os: macos-latest
+            platform: macos
+            cmd: npm run build:mac
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Export Web Bundle
+        run: npm run build:web
+
+      - name: Build Desktop Distributables
+        run: ${{ matrix.cmd }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-release
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.tar.gz
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: warn
+
+  # Stage 3: Publish to GitHub Releases
+  publish-release:
+    name: Publish GitHub Release
+    needs: [test, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Display Downloaded Files
+        run: |
+          echo "Downloaded release artifacts:"
+          find release-artifacts -type f -exec ls -lh {} +
+
+      - name: Determine Release Tag
+        id: release_info
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v1.0.0-$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: DevVault ${{ steps.release_info.outputs.tag }}
+          files: |
+            release-artifacts/**/*.exe
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*.deb
+            release-artifacts/**/*.tar.gz
+            release-artifacts/**/*.dmg
+            release-artifacts/**/*.zip
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
