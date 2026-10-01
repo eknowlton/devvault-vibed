@@ -46,7 +46,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   onClose,
   onSaveSnippetOutput,
 }) => {
-  if (!snippet) return null;
+  if (!snippet || snippet.type !== 'command') return null;
 
   // Synthesis fallback if snippet has no expected output yet
   const getDefaultOutput = (item: Snippet): string => {
@@ -300,7 +300,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
       );
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2200);
-      showToast('Saved output & machine profile to recipe!');
+      showToast('Saved output & machine profile to command!');
     }
   };
 
@@ -844,7 +844,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
                       color={colors.textInverse}
                     />
                     <Text style={styles.saveBtnText}>
-                      {saveSuccess ? 'Saved to Recipe!' : 'Save Expected Output to Recipe'}
+                      {saveSuccess ? 'Saved to Command!' : 'Save Expected Output to Command'}
                     </Text>
                   </TouchableOpacity>
                 </View>

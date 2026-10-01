@@ -156,6 +156,9 @@ export default function App() {
   };
 
   const handleOpenEmulator = (snippet: Snippet) => {
+    if (snippet.type !== 'command') {
+      return;
+    }
     setEmulatorSnippet(snippet);
     setIsEmulatorOpen(true);
   };

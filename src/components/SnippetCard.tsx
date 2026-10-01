@@ -183,7 +183,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
             <Text style={styles.copyCountText}>{snippet.copyCount || 0}</Text>
           </View>
 
-          {onOpenEmulator && (
+          {onOpenEmulator && snippet.type === 'command' && (
             <TouchableOpacity
               style={styles.emulateBtn}
               onPress={() => onOpenEmulator(snippet)}

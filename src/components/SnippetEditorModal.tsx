@@ -341,22 +341,24 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
               />
             </View>
 
-            {/* Expected Output (Terminal Simulation) */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>EXPECTED CLI OUTPUT (OPTIONAL)</Text>
-              <TextInput
-                style={[styles.input, styles.descTextArea]}
-                placeholder="Simulated stdout/stderr preview for the Terminal Emulator & Social Card..."
-                placeholderTextColor={colors.textMuted}
-                value={expectedOutput}
-                onChangeText={setExpectedOutput}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+            {/* Expected Output (Terminal Simulation - Commands Only) */}
+            {type === 'command' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>EXPECTED CLI OUTPUT (OPTIONAL)</Text>
+                <TextInput
+                  style={[styles.input, styles.descTextArea]}
+                  placeholder="Simulated stdout/stderr preview for the Terminal Emulator & Social Card..."
+                  placeholderTextColor={colors.textMuted}
+                  value={expectedOutput}
+                  onChangeText={setExpectedOutput}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
 
             {/* Tags */}
             <View style={styles.inputGroup}>
