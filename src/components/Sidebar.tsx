@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -127,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <Text style={styles.newSnippetText}>New Entry (Cmd+N)</Text>
       </TouchableOpacity>
 
-      <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={Platform.OS === 'web'}>
         {/* Quick Views */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>LIBRARY</Text>

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -31,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenServer,
 }) => {
   const inputRef = useRef<TextInput>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const handleClearSearch = () => {
     onUpdateFilters((prev) => ({ ...prev, query: '' }));
@@ -89,9 +90,22 @@ export const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
         )}
 
-        {/* Global Search Bar */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={17} color={colors.textMuted} style={styles.searchIcon} />
+        {/* Global Search Bar (Full Fieldset Focus Ring) */}
+        <View
+          style={[styles.searchBar, isSearchFocused && styles.searchBarFocused]}
+          // @ts-ignore - React Native Web dataSet
+          dataSet={{ searchbar: 'true' }}
+          onStartShouldSetResponder={() => {
+            inputRef.current?.focus();
+            return false;
+          }}
+        >
+          <Ionicons
+            name="search"
+            size={17}
+            color={isSearchFocused ? colors.primary : colors.textMuted}
+            style={styles.searchIcon}
+          />
           <TextInput
             ref={inputRef}
             style={styles.input}
@@ -101,6 +115,8 @@ export const Header: React.FC<HeaderProps> = ({
             onChangeText={(text) =>
               onUpdateFilters((prev) => ({ ...prev, query: text }))
             }
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -268,6 +284,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 42,
   },
+  searchBarFocused: {
+    borderColor: colors.primary,
+    ...(Platform.OS === 'web'
+      ? ({
+          boxShadow: '0 0 0 3px rgba(88, 166, 255, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4)',
+        } as any)
+      : {
+          borderWidth: 1.5,
+        }),
+  },
   searchIcon: {
     marginRight: 8,
   },
@@ -277,6 +303,14 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: 'monospace',
     height: '100%',
+    borderWidth: 0,
+    ...(Platform.OS === 'web'
+      ? ({
+          outline: 'none',
+          outlineStyle: 'none',
+          boxShadow: 'none',
+        } as any)
+      : {}),
   },
   clearBtn: {
     padding: 4,

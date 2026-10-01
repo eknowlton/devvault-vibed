@@ -30,6 +30,10 @@ import { SnippetEditorModal } from './src/components/SnippetEditorModal';
 import { ParameterFillerModal } from './src/components/ParameterFillerModal';
 import { BackupModal } from './src/components/BackupModal';
 import { ServerModal } from './src/components/ServerModal';
+import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
+
+// Initialize web darkmode scrollbar and focus styles
+injectGlobalWebStyles();
 
 export default function App() {
   const { width } = useWindowDimensions();
@@ -70,6 +74,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    injectGlobalWebStyles();
     loadData();
   }, []);
 

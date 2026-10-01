@@ -1,6 +1,9 @@
 import { registerRootComponent } from 'expo';
+import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
 
 import App from './App';
+
+injectGlobalWebStyles();
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

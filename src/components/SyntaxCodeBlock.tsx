@@ -173,6 +173,8 @@ export const SyntaxCodeBlock: React.FC<SyntaxCodeBlockProps> = ({
           styles.viewport,
           canExpand && !isExpanded ? { maxHeight } : undefined,
         ]}
+        // @ts-ignore - React Native Web dataSet
+        dataSet={{ codeBlock: 'true' }}
       >
         <View style={styles.codeBody}>
           {displayLineNumbers && (
