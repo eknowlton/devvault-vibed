@@ -249,7 +249,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                   This will reload the initial developer recipe pack (Git, Docker, Kubernetes, Linux, FFmpeg, Curl, Database).
                 </Text>
                 <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: colors.danger }]}
+                  style={[
+                    styles.actionBtn,
+                    styles.resetConfirmBtn,
+                    { backgroundColor: colors.danger },
+                  ]}
                   onPress={handleReset}
                   activeOpacity={0.8}
                 >
@@ -368,7 +372,14 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.primary,
     paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 6,
+  },
+  resetConfirmBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    minHeight: 44,
+    gap: 10,
   },
   actionBtnActive: {
     backgroundColor: colors.accentGreen,
