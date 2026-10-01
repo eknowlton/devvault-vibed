@@ -7,6 +7,10 @@
 export interface TerminalCardOptions {
   title?: string;
   prompt?: string;
+  username?: string;
+  hostname?: string;
+  cwd?: string;
+  promptSymbol?: string;
   command: string;
   output: string;
   duration?: string;
@@ -15,10 +19,25 @@ export interface TerminalCardOptions {
 }
 
 /**
+ * Builds a prompt string from user, host, cwd, and prompt symbol.
+ * Example: ethan@devvault:~$ or root@prod-api-01:/etc#
+ */
+export function buildPromptString(options: Partial<TerminalCardOptions>): string {
+  if (options.username || options.hostname || options.cwd || options.promptSymbol) {
+    const user = (options.username || 'dev').trim();
+    const host = (options.hostname || 'vault').trim();
+    const cwd = (options.cwd || '~').trim();
+    const symbol = options.promptSymbol || (user === 'root' ? '#' : '$');
+    return `${user}@${host}:${cwd}${symbol}`;
+  }
+  return options.prompt || 'dev@vault:~$';
+}
+
+/**
  * Generates a clean, Unicode-framed ASCII terminal card.
  */
 export function formatAsciiTerminalCard(options: TerminalCardOptions): string {
-  const prompt = options.prompt || 'dev@vault:~$';
+  const prompt = options.prompt || buildPromptString(options);
   const command = options.command.trim();
   const output = (options.output || '✔ Command completed successfully.').trim();
   const duration = options.duration || '120ms';

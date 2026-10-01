@@ -18,6 +18,9 @@ export interface Snippet {
   expectedOutput?: string;
   executionDuration?: string;
   simulatedPrompt?: string;
+  simulatedUser?: string;
+  simulatedHost?: string;
+  simulatedCwd?: string;
   createdAt: number;
   updatedAt: number;
 }
