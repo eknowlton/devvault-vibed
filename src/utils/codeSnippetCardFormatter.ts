@@ -240,8 +240,8 @@ export function generateSvgCodeCard(options: CodeCardOptions): string {
   const codeLines = rawLines.length > 0 ? rawLines : [''];
 
   const lineHeight = 21;
-  const fontMono = `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace`;
-  const fontSans = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+  const fontMono = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  const fontSans = 'system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif';
 
   // Description box sizing
   let descHeight = 0;
