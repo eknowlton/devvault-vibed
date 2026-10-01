@@ -140,9 +140,12 @@ function saveSnippets(snippets) {
   }
 }
 
-// Authentication Check
+// Authentication Check (Private entries require a valid API token)
 function isAuthorized(req) {
-  if (!apiKey) return true; // If no API key configured, open access
+  if (!apiKey) {
+    // If no API key is configured on the server, private items cannot be unlocked
+    return false;
+  }
   const authHeader = req.headers['authorization'] || '';
   if (authHeader.startsWith('Bearer ')) {
     return authHeader.substring(7).trim() === apiKey;
