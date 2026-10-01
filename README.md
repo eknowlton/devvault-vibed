@@ -19,7 +19,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Web_•_iOS_•_Android_•_Desktop-8A2BE2?style=for-the-badge)](https://github.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[Features](#-key-features) • [Quick Start](#-quick-start) • [API Server](#-embedded-rest-api-server) • [Template Parameters](#-template-parameters) • [Keyboard Shortcuts](#-keyboard-shortcuts) • [Architecture](#-project-architecture)
+[Features](#-key-features) • [Quick Start](#-quick-start) • [Terminal Emulator & Social Cards](#-terminal-emulation--social-sharing-cards) • [REST API Server](#-embedded-rest-api-server) • [Peer Vault Importer](#-peer-vault-importer--strict-deduplication) • [Template Parameters](#-template-parameters) • [Keyboard Shortcuts](#-keyboard-shortcuts) • [Architecture](#-project-architecture)
 
 </div>
 
@@ -90,6 +90,53 @@ npm run android  # Android Emulator
 
 ---
 
+## 📺 Terminal Emulation & Social Sharing Cards
+
+DevVault features an interactive, virtual terminal emulator that simulates realistic command execution and outputs stunning, social-shareable cards for Twitter/X, LinkedIn, Discord, Slack, and GitHub.
+
+Tap **"⚡ Emulate"** on any command or recipe card to open the interactive emulator.
+
+```text
+╭──[ ethan@macbook-pro:~ ]─────────────────────────────────────────╮
+│ $ git reset --soft HEAD~1                                        │
+├──────────────────────────────────────────────────────────────────┤
+│ [main 4f1a92e] Changes applied cleanly.                          │
+│  2 files changed, 18 insertions(+), 4 deletions(-)               │
+│ ✔ Git operation completed in 48ms.                               │
+│                                                                  │
+│ [ ✔ exit 0  •  ⚡ 120ms  •  DevVault ]                           │
+╰──────────────────────────────────────────────────────────────────╯
+```
+
+### ⚡ Interactive Emulation Features
+- **Real-Time Typing Animation**: Simulates character-by-character shell entry with a blinking cursor (`▋`).
+- **Playback Speed Selector**: Choose between standard speed (`1x`), fast speed (`2x`), or `instant` replay.
+- **Execution Lifecycle**: Displays realistic execution states ("Running command..." spinner), simulated latency (`⚡ 120ms`), and exit status badges (`● exit 0` / `✘ exit 1`).
+- **Simulated Stdout / Stderr**: Customize expected command outputs with one-tap presets for **Success messages**, **JSON responses**, and **CLI Tables**. Tap **"Save Output to Recipe"** to persist your custom output directly to your vault database.
+
+### 💻 Machine Environment & Hostname Customization
+Customize the simulated environment to match whatever machine you want to showcase:
+- **Username**: e.g., `ethan`, `root`, `ubuntu`, `admin`, `dev`
+- **Hostname**: e.g., `macbook-pro`, `prod-api-01`, `aws-ec2`, `k8s-master`, `archlinux`
+- **Working Directory (CWD)**: e.g., `~`, `/etc/nginx`, `~/projects/app`, `/var/log`
+- **Prompt Symbols**: `$`, `#` (root auto-select), `❯`, `>`
+- **Quick Machine Presets**:
+  - 💻 **MacBook Pro**: `ethan@macbook-pro:~ $`
+  - 🔒 **Linux Production Root**: `root@prod-api-01:/etc #`
+  - ☁️ **AWS EC2 Cloud**: `ubuntu@aws-ec2:~/app $`
+  - ⚡ **Starship / Arch**: `dev@archlinux:~ ❯`
+
+### 📤 5 Social Export Formats
+| Format | Description & Compatibility |
+| :--- | :--- |
+| **🔲 Unicode ASCII Box** | High-fidelity Unicode box-drawing frame (`╭─`, `│`, `╰─`). Renders natively in monospaced fonts on **GitHub Issues/PRs**, **Discord**, **Reddit**, **Slack**, and emails. |
+| **📝 Markdown Codeblock** | Formatted ````bash ... ```` block with prompt, commands, output, and execution summary comment ready for blogs and documentation. |
+| **🐦 X / Twitter Post** | One-tap button that pre-populates a tweet intent with the command, prompt, simulated output, and developer hashtags (`#DevVault #Terminal #CLI`). |
+| **💼 LinkedIn Post** | Share DevOps tips, deployment snippets, and workflow recipes directly with professional engineering networks. |
+| **🖼️ Vector SVG Image** | Standalone high-resolution SVG download featuring a macOS-framed window with traffic lights (`🔴 🟡 🟢`), subtle glow borders, and drop-shadows. Available in 5 vibrant color themes: **Cyberpunk** (cyan/neon), **Tokyo Night** (soft purple), **Dracula** (pink/purple), **Matrix** (emerald hacker green), and **Obsidian** (dark minimal). |
+
+---
+
 ## 📡 Embedded REST API Server
 
 DevVault includes a built-in, standalone Node.js HTTP server ([`server/apiServer.mjs`](server/apiServer.mjs)) with **zero external dependencies**. It allows other machines, teammates, or shell terminals to query your command library.
@@ -121,6 +168,7 @@ node server/apiServer.mjs --port=4141 --api-key=mysecret --allow-write
 | `GET` | `/api/raw/:id` | Raw snippet content (for `curl ... \| bash`) | Private only |
 | `POST`| `/api/snippets` | Create a new snippet | If writes protected |
 | `DELETE`| `/api/snippets/:id` | Delete a snippet | Token required |
+| `POST`| `/api/import/remote` | Import entries from another DevVault server with deduplication | If writes protected |
 
 ### Terminal Quick Recipes
 
@@ -149,44 +197,134 @@ curl -s -H "Authorization: Bearer mysecret" http://localhost:4141/api/commands
 curl -s "http://localhost:4141/api/commands?format=raw"
 ```
 
-#### 6. Remotely trigger an import from another DevVault peer:
+#### 6. Create a new command remotely:
+```bash
+curl -X POST http://localhost:4141/api/commands \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mysecret" \
+  -d '{
+    "title": "Kill Zombie Node Processes",
+    "content": "killall -9 node",
+    "category": "System",
+    "platform": "linux",
+    "tags": ["process", "node"]
+  }'
+```
+
+#### 7. Remotely trigger an import from another DevVault peer:
 ```bash
 curl -X POST http://localhost:4141/api/import/remote \
   -H "Content-Type: application/json" \
-  -d '{"remoteUrl": "http://192.168.1.100:4141", "endpointType": "all"}'
+  -H "Authorization: Bearer mysecret" \
+  -d '{
+    "remoteUrl": "http://192.168.1.100:4141",
+    "endpointType": "all"
+  }'
 ```
 
 ---
 
 ## 🌐 Peer Vault Importer & Strict Deduplication
 
-DevVault allows you to share and collaborate with other developers by importing their commands, recipes, or snippets directly from their running DevVault API server without polluting your database with duplicate items.
+DevVault allows you to share and collaborate with teammates or sync across multiple workstations by importing commands, recipes, or snippets directly from an external DevVault API server **without creating duplicate entries**.
 
-### 🛡️ How Deduplication Works
-Every incoming item is evaluated through a multi-pass deduplication comparison:
-1. **Exact ID Match**: Prevents duplicate records with identical IDs.
-2. **Normalized Code Match**: Compares the clean script content (stripping carriage returns, blank lines, and whitespace variance). If an identical command already exists in your vault, it is flagged with a note linking the existing entry.
-3. **Title + Content Match**: Verifies matching command names and actions.
+### 🛡️ 3-Layer Deduplication Engine
+When you connect to an external DevVault instance, the importer runs a multi-pass analyzer to protect your database from redundant records:
 
-### 💻 Using the In-App Modal
-1. Tap **"Import Remote"** in the top navigation bar or sidebar footer.
-2. Enter the remote DevVault API URL (e.g. `http://peer-machine:4141` or `http://localhost:3000`).
-3. Select resource scope: **All Items**, **Commands Only**, **Recipes Only**, or **Snippets Only**.
-4. (Optional) Enter a Bearer token if the remote vault has enabled authentication for private recipes.
-5. Tap **"Connect & Scan Remote Vault"** — DevVault fetches the entries and groups them into `✨ NEW` vs `⚠️ DUPLICATE`.
-6. Select the items you want (or tap **"Select New"**) and click **"Import Selected Items"** to merge them cleanly into your vault.
+1. **Exact ID Match**: Identifies records that already share a unique identifier.
+2. **Normalized Script Content Match**: Sanitizes line-endings (`\r\n` vs `\n`), trims whitespace, and collapses blank lines. If the underlying shell command or recipe commands match an existing snippet, the importer marks it as a duplicate and reports the existing title (e.g. `Identical script content already exists in 'Undo Last Git Commit'`).
+3. **Title & Code Composite Match**: Verifies matching command names and actions.
 
-### ⌨️ Using the CLI Script
-You can also import directly from your shell without opening the UI:
+---
+
+### 💻 Method 1: Interactive In-App Modal
+The easiest way to import entries is through the built-in UI:
+
+1. Click **"Import Remote"** in the top navigation bar or the sidebar footer.
+2. Enter the remote DevVault API URL (e.g. `http://peer-machine:4141`, `http://192.168.1.50:4141`, or `http://localhost:3000`).
+3. Select your resource scope:
+   - ⚡ **All Items**: Imports from `/api/snippets`
+   - 💻 **Commands Only**: Imports from `/api/commands`
+   - 📜 **Recipes Only**: Imports from `/api/recipes`
+   - 📝 **Snippets Only**: Imports from `/api/snippets?type=snippet`
+4. *(Optional)* Expand **"+ Add Bearer Token"** if the remote server has authentication enabled for private recipes.
+5. Tap **"Connect & Scan Remote Vault"** — DevVault connects, queries the endpoint, and groups entries:
+   - `✨ NEW`: Items that do not exist in your vault (pre-selected by default).
+   - `⚠️ DUPLICATE`: Items that already exist (annotated with match reasons and unselected by default).
+6. Filter or search the remote results, toggle **"Strict Deduplication Mode"** (guarantees duplicates are skipped), and tap **"Import Selected Items"**.
+
+---
+
+### ⌨️ Method 2: Standalone CLI Script
+Prefer working from the terminal? DevVault includes an automated import script ([`scripts/importFromVault.mjs`](scripts/importFromVault.mjs)):
+
 ```bash
-# Preview what would be imported (Dry run)
+# Preview what would be imported (Dry run with duplicate detection)
 node scripts/importFromVault.mjs http://localhost:4141 --dry-run
 
 # Import commands only
-node scripts/importFromVault.mjs http://localhost:4141 --type commands
+node scripts/importFromVault.mjs http://192.168.1.50:4141 --type commands
 
-# Import with remote authentication token
-node scripts/importFromVault.mjs http://peer-host:4141 --token secret-token
+# Import recipes only
+node scripts/importFromVault.mjs http://192.168.1.50:4141 --type recipes
+
+# Import with remote Bearer authentication token
+node scripts/importFromVault.mjs http://peer-host:4141 --token my-secret-token
+```
+
+#### CLI Output Example:
+```text
+📡 Connecting to DevVault API: http://localhost:4141 (Scope: all)
+✔ Found 14 items from remote vault.
+
+------------------------------------------------------
+📊 DEDUPLICATION SUMMARY:
+   ✨ New items ready to import: 10
+   ⚠️  Duplicate items skipped:   4
+------------------------------------------------------
+
+Skipped Duplicates:
+  - [SKIPPED] "Undo Last Git Commit (Keep Changes)": Identical script content already exists
+  - [SKIPPED] "Docker System Prune Deep Clean": Duplicate ID
+  - [SKIPPED] "Kubernetes Tail Pod Logs": Identical script content already exists
+  - [SKIPPED] "PostgreSQL Dump Single Table": Duplicate title and content
+
+New Items to Import:
+  + [NEW] [COMMAND] "Find and Kill Process on Port" (System)
+  + [NEW] [RECIPE] "Zero-Downtime Blue/Green Deploy" (DevOps)
+  ...
+
+🎉 Successfully imported 10 items into local vault!
+```
+
+---
+
+### 📡 Method 3: Automated Server-to-Server API
+Trigger synchronization programmatically from CI/CD or another backend:
+
+```bash
+curl -X POST http://localhost:4141/api/import/remote \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mysecret" \
+  -d '{
+    "remoteUrl": "http://192.168.1.100:4141",
+    "endpointType": "all",
+    "token": "remote-server-token"
+  }'
+```
+
+#### Response:
+```json
+{
+  "message": "Import completed: 10 new items imported, 4 duplicates skipped.",
+  "scannedCount": 14,
+  "importedCount": 10,
+  "duplicatesSkipped": 4,
+  "duplicateDetails": [
+    { "title": "Undo Last Git Commit", "reason": "Identical script content already exists" }
+  ],
+  "imported": [ ... ]
+}
 ```
 
 ---
