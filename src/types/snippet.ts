@@ -15,6 +15,9 @@ export interface Snippet {
   starred: boolean;
   isPrivate: boolean;
   copyCount: number;
+  expectedOutput?: string;
+  executionDuration?: string;
+  simulatedPrompt?: string;
   createdAt: number;
   updatedAt: number;
 }

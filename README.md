@@ -44,6 +44,8 @@ Developers constantly juggle complex CLI flags (`ffmpeg`, `docker`, `kubectl`, `
 | **🧩 Interactive Template Filler** | Auto-detects `{{PARAM}}` and `{{PARAM:default}}` placeholders. Fill values live with one-click copy. |
 | **🎨 Syntax Highlighting** | Zero-dependency high-speed tokenizer for **Bash / Shell**, **TypeScript / JS**, **Python**, **SQL**, and **Dockerfile**. |
 | **📏 Expandable Snippets** | Inline preview with line numbering and collapse toggles for long shell scripts or functions. |
+| **📺 Terminal Emulation & Output** | Interactive CLI playback with typing animation, execution spinner, customizable stdout/stderr output, and latency metrics. |
+| **📤 Social-Friendly Sharing Cards** | One-tap export to Unicode ASCII terminal boxes, Markdown blocks, Twitter/X & LinkedIn intent shares, and vector SVG images. |
 | **🌐 Public vs. Private Visibility** | Mark sensitive credentials or internal company commands as `🔒 Private`, while keeping general snippets `🌐 Public`. |
 | **🚀 Embedded REST API Server** | Lightweight Node.js server exposing dedicated endpoints for `/api/commands`, `/api/recipes`, and `/api/snippets`. |
 | **⚡ Terminal Dark Aesthetic** | Tokyo Night / Catppuccin-inspired dark theme with glowing neon custom scrollbars and responsive input focus rings. |

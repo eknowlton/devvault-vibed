@@ -30,6 +30,7 @@ import { SnippetEditorModal } from './src/components/SnippetEditorModal';
 import { ParameterFillerModal } from './src/components/ParameterFillerModal';
 import { BackupModal } from './src/components/BackupModal';
 import { ServerModal } from './src/components/ServerModal';
+import { TerminalEmulatorModal } from './src/components/TerminalEmulatorModal';
 import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
 
 // Initialize web darkmode scrollbar and focus styles
@@ -60,6 +61,9 @@ export default function App() {
 
   const [isFillerOpen, setIsFillerOpen] = useState(false);
   const [fillerSnippet, setFillerSnippet] = useState<Snippet | null>(null);
+
+  const [isEmulatorOpen, setIsEmulatorOpen] = useState(false);
+  const [emulatorSnippet, setEmulatorSnippet] = useState<Snippet | null>(null);
 
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isServerOpen, setIsServerOpen] = useState(false);
@@ -149,6 +153,32 @@ export default function App() {
     setIsFillerOpen(true);
   };
 
+  const handleOpenEmulator = (snippet: Snippet) => {
+    setEmulatorSnippet(snippet);
+    setIsEmulatorOpen(true);
+  };
+
+  const handleSaveSnippetOutput = async (
+    snippetId: string,
+    expectedOutput: string,
+    duration: string,
+    prompt: string
+  ) => {
+    const target = snippets.find((s) => s.id === snippetId);
+    if (target) {
+      const updated: Snippet = {
+        ...target,
+        expectedOutput,
+        executionDuration: duration,
+        simulatedPrompt: prompt,
+        updatedAt: Date.now(),
+      };
+      const updatedList = await addOrUpdateSnippet(updated);
+      setSnippets(updatedList);
+      setEmulatorSnippet(updated);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
@@ -205,6 +235,7 @@ export default function App() {
                 onEdit={handleOpenEditor}
                 onDelete={handleDelete}
                 onOpenFiller={handleOpenFiller}
+                onOpenEmulator={handleOpenEmulator}
               />
             )}
             ListEmptyComponent={
@@ -294,6 +325,17 @@ export default function App() {
       <ServerModal
         visible={isServerOpen}
         onClose={() => setIsServerOpen(false)}
+      />
+
+      {/* Terminal Emulation & Social Card Modal */}
+      <TerminalEmulatorModal
+        visible={isEmulatorOpen}
+        snippet={emulatorSnippet}
+        onClose={() => {
+          setIsEmulatorOpen(false);
+          setEmulatorSnippet(null);
+        }}
+        onSaveSnippetOutput={handleSaveSnippetOutput}
       />
     </SafeAreaView>
   );

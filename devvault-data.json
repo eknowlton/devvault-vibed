@@ -18,7 +18,10 @@
     "isPrivate": false,
     "copyCount": 14,
     "createdAt": 1727769600000,
-    "updatedAt": 1727769600000
+    "updatedAt": 1727769600000,
+    "expectedOutput": "Unstaged changes after reset:\nM  src/components/Header.tsx\nM  package.json\n[HEAD detached at bbfc7af] Last commit undone cleanly.",
+    "executionDuration": "48ms",
+    "simulatedPrompt": "ethan@devvault:~/project (main) $"
   },
   {
     "id": "seed-git-cleanup-branches",
@@ -82,7 +85,10 @@
     "isPrivate": false,
     "copyCount": 29,
     "createdAt": 1727760000000,
-    "updatedAt": 1727760000000
+    "updatedAt": 1727760000000,
+    "expectedOutput": "Deleted Containers:\n4a29c1b3f940\n1b8c2d9e03f1\nDeleted Networks:\ncustom_bridge_network\nDeleted Volumes:\ncache_data_vol\nTotal reclaimed space: 4.821GB",
+    "executionDuration": "1.24s",
+    "simulatedPrompt": "root@prod-docker-01 #"
   },
   {
     "id": "seed-docker-run-interactive",
@@ -166,7 +172,10 @@
     "isPrivate": true,
     "copyCount": 16,
     "createdAt": 1727775000000,
-    "updatedAt": 1727775000000
+    "updatedAt": 1727775000000,
+    "expectedOutput": "sk-proj-9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b\n✔ Secret key decoded successfully.",
+    "executionDuration": "210ms",
+    "simulatedPrompt": "k8s-admin@cluster-us-east ❯"
   },
   {
     "id": "seed-linux-find-modified-24h",
@@ -210,7 +219,10 @@
     "isPrivate": false,
     "copyCount": 38,
     "createdAt": 1727765000000,
-    "updatedAt": 1727765000000
+    "updatedAt": 1727765000000,
+    "expectedOutput": "Killing PID 49204 listening on port 3000 (node)\n✔ Process successfully terminated.",
+    "executionDuration": "24ms",
+    "simulatedPrompt": "user@linuxbox:~$"
   },
   {
     "id": "seed-curl-timing-breakdown",
@@ -232,7 +244,10 @@
     "isPrivate": false,
     "copyCount": 22,
     "createdAt": 1727777000000,
-    "updatedAt": 1727777000000
+    "updatedAt": 1727777000000,
+    "expectedOutput": "  time_namelookup:  0.0124s\n     time_connect:  0.0382s\n  time_appconnect:  0.0891s\n time_pretransfer:  0.0894s\n    time_redirect:  0.0000s\ntime_starttransfer: 0.1245s\n                   ----------\n       time_total:  0.1382s",
+    "executionDuration": "138ms",
+    "simulatedPrompt": "dev@workstation ❯"
   },
   {
     "id": "ffmpeg-video-to-gif",

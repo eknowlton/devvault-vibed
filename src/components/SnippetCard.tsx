@@ -23,6 +23,7 @@ interface SnippetCardProps {
   onEdit: (snippet: Snippet) => void;
   onDelete: (id: string) => void;
   onOpenFiller: (snippet: Snippet) => void;
+  onOpenEmulator?: (snippet: Snippet) => void;
 }
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({
@@ -35,6 +36,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   onEdit,
   onDelete,
   onOpenFiller,
+  onOpenEmulator,
 }) => {
   const [copiedQuick, setCopiedQuick] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
@@ -174,12 +176,23 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
           ))}
         </View>
 
-        {/* Copy / Fill Buttons & Copy Counter */}
+        {/* Copy / Fill / Emulate Buttons & Copy Counter */}
         <View style={styles.bottomActions}>
           <View style={styles.copyCountBadge}>
             <Ionicons name="stats-chart-outline" size={12} color={colors.textMuted} />
             <Text style={styles.copyCountText}>{snippet.copyCount || 0}</Text>
           </View>
+
+          {onOpenEmulator && (
+            <TouchableOpacity
+              style={styles.emulateBtn}
+              onPress={() => onOpenEmulator(snippet)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="terminal-outline" size={13} color={colors.accentGreen} />
+              <Text style={styles.emulateBtnText}>Emulate</Text>
+            </TouchableOpacity>
+          )}
 
           {isParameterized ? (
             <TouchableOpacity
@@ -290,6 +303,23 @@ const styles = StyleSheet.create({
   copyCountText: {
     fontSize: 11,
     color: colors.textMuted,
+    fontFamily: 'monospace',
+  },
+  emulateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(63, 185, 80, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(63, 185, 80, 0.35)',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  emulateBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accentGreen,
     fontFamily: 'monospace',
   },
   fillerBtn: {

@@ -51,6 +51,7 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [platform, setPlatform] = useState<PlatformTarget>('all');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [expectedOutput, setExpectedOutput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
       setTags([...snippetToEdit.tags]);
       setPlatform(snippetToEdit.platform);
       setIsPrivate(Boolean(snippetToEdit.isPrivate));
+      setExpectedOutput(snippetToEdit.expectedOutput || '');
     } else {
       setTitle('');
       setContent('');
@@ -74,6 +76,7 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
       setTags([]);
       setPlatform('all');
       setIsPrivate(false);
+      setExpectedOutput('');
     }
     setTagInput('');
     setErrorMessage('');
@@ -114,6 +117,9 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
       starred: snippetToEdit ? snippetToEdit.starred : false,
       isPrivate,
       copyCount: snippetToEdit ? snippetToEdit.copyCount : 0,
+      expectedOutput: expectedOutput.trim() || undefined,
+      executionDuration: snippetToEdit ? snippetToEdit.executionDuration : undefined,
+      simulatedPrompt: snippetToEdit ? snippetToEdit.simulatedPrompt : undefined,
       createdAt: snippetToEdit ? snippetToEdit.createdAt : Date.now(),
       updatedAt: Date.now(),
     };
@@ -332,6 +338,23 @@ export const SnippetEditorModal: React.FC<SnippetEditorModalProps> = ({
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
+              />
+            </View>
+
+            {/* Expected Output (Terminal Simulation) */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>EXPECTED CLI OUTPUT (OPTIONAL)</Text>
+              <TextInput
+                style={[styles.input, styles.descTextArea]}
+                placeholder="Simulated stdout/stderr preview for the Terminal Emulator & Social Card..."
+                placeholderTextColor={colors.textMuted}
+                value={expectedOutput}
+                onChangeText={setExpectedOutput}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                autoCapitalize="none"
+                autoCorrect={false}
               />
             </View>
 
