@@ -86,6 +86,8 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   const serverPort = config.port || 4141;
   const startCommand = `npm run api:start`;
 
+  const curlCommands = `curl -s http://localhost:${serverPort}/api/commands`;
+  const curlRecipes = `curl -s http://localhost:${serverPort}/api/recipes`;
   const curlPublic = `curl -s http://localhost:${serverPort}/api/snippets`;
   const curlSearch = `curl -s "http://localhost:${serverPort}/api/snippets/search?q=docker"`;
   const curlRaw = `curl -s http://localhost:${serverPort}/api/raw/seed-git-undo-commit`;
@@ -161,13 +163,16 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                     Total: <Text style={styles.statVal}>{serverStatus.totalSnippets}</Text>
                   </Text>
                   <Text style={styles.statItem}>
+                    Commands: <Text style={styles.statVal}>{serverStatus.totalCommands ?? '-'}</Text>
+                  </Text>
+                  <Text style={styles.statItem}>
+                    Recipes: <Text style={styles.statVal}>{serverStatus.totalRecipes ?? '-'}</Text>
+                  </Text>
+                  <Text style={styles.statItem}>
                     Public (🌐): <Text style={styles.statVal}>{serverStatus.publicSnippets}</Text>
                   </Text>
                   <Text style={styles.statItem}>
                     Private (🔒): <Text style={styles.statVal}>{serverStatus.privateSnippets}</Text>
-                  </Text>
-                  <Text style={styles.statItem}>
-                    Writes: <Text style={styles.statVal}>{serverStatus.allowWrite ? 'Yes' : 'No'}</Text>
                   </Text>
                 </View>
               ) : (
@@ -277,7 +282,55 @@ export const ServerModal: React.FC<ServerModalProps> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>API ENDPOINTS & TERMINAL RECIPES</Text>
 
-              {/* Endpoint 1: Public Snippets */}
+              {/* Endpoint 1: Commands */}
+              <View style={styles.recipeCard}>
+                <View style={styles.recipeHeader}>
+                  <View style={styles.methodBadge}>
+                    <Text style={styles.methodText}>GET</Text>
+                  </View>
+                  <Text style={styles.endpointPath}>/api/commands</Text>
+                  <Text style={styles.recipeDesc}>Fetch CLI commands (or ?platform=linux)</Text>
+                </View>
+                <View style={styles.codeSnippetBox}>
+                  <Text style={styles.codeSnippetText}>{curlCommands}</Text>
+                  <TouchableOpacity
+                    style={styles.copySnippetBtn}
+                    onPress={() => handleCopyCommand(curlCommands, 'commands')}
+                  >
+                    <Ionicons
+                      name={copiedKey === 'commands' ? 'checkmark' : 'copy-outline'}
+                      size={14}
+                      color={copiedKey === 'commands' ? colors.accentGreen : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Endpoint 2: Recipes */}
+              <View style={styles.recipeCard}>
+                <View style={styles.recipeHeader}>
+                  <View style={styles.methodBadge}>
+                    <Text style={styles.methodText}>GET</Text>
+                  </View>
+                  <Text style={styles.endpointPath}>/api/recipes</Text>
+                  <Text style={styles.recipeDesc}>Fetch multi-step recipes & workflows</Text>
+                </View>
+                <View style={styles.codeSnippetBox}>
+                  <Text style={styles.codeSnippetText}>{curlRecipes}</Text>
+                  <TouchableOpacity
+                    style={styles.copySnippetBtn}
+                    onPress={() => handleCopyCommand(curlRecipes, 'recipes')}
+                  >
+                    <Ionicons
+                      name={copiedKey === 'recipes' ? 'checkmark' : 'copy-outline'}
+                      size={14}
+                      color={copiedKey === 'recipes' ? colors.accentGreen : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Endpoint 3: Public Snippets */}
               <View style={styles.recipeCard}>
                 <View style={styles.recipeHeader}>
                   <View style={styles.methodBadge}>

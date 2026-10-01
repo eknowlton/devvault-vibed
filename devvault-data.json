@@ -6,7 +6,12 @@
     "type": "command",
     "language": "bash",
     "description": "Undoes the most recent commit while preserving all modified files in the staging area.",
-    "tags": ["git", "undo", "commit", "staging"],
+    "tags": [
+      "git",
+      "undo",
+      "commit",
+      "staging"
+    ],
     "category": "Git",
     "platform": "all",
     "starred": true,
@@ -22,7 +27,12 @@
     "type": "command",
     "language": "bash",
     "description": "Finds all local branches already merged into the current branch and safely deletes them.",
-    "tags": ["git", "cleanup", "branch", "prune"],
+    "tags": [
+      "git",
+      "cleanup",
+      "branch",
+      "prune"
+    ],
     "category": "Git",
     "platform": "all",
     "starred": false,
@@ -38,7 +48,12 @@
     "type": "command",
     "language": "bash",
     "description": "Scans the git commit history with diff-filter=D to find which commit deleted a specified file.",
-    "tags": ["git", "history", "debug", "recovery"],
+    "tags": [
+      "git",
+      "history",
+      "debug",
+      "recovery"
+    ],
     "category": "Git",
     "platform": "all",
     "starred": false,
@@ -54,7 +69,13 @@
     "type": "command",
     "language": "bash",
     "description": "Removes all stopped containers, unused networks, and build volumes.",
-    "tags": ["docker", "cleanup", "prune", "disk", "devops"],
+    "tags": [
+      "docker",
+      "cleanup",
+      "prune",
+      "disk",
+      "devops"
+    ],
     "category": "Docker",
     "platform": "all",
     "starred": true,
@@ -70,7 +91,12 @@
     "type": "command",
     "language": "bash",
     "description": "Spins up an ephemeral container with curl installed that attaches to host network.",
-    "tags": ["docker", "curl", "debug", "network"],
+    "tags": [
+      "docker",
+      "curl",
+      "debug",
+      "network"
+    ],
     "category": "Docker",
     "platform": "all",
     "starred": false,
@@ -86,7 +112,12 @@
     "type": "command",
     "language": "bash",
     "description": "Extracts the bridge network IP address directly from container JSON metadata.",
-    "tags": ["docker", "inspect", "networking", "ip"],
+    "tags": [
+      "docker",
+      "inspect",
+      "networking",
+      "ip"
+    ],
     "category": "Docker",
     "platform": "all",
     "starred": false,
@@ -102,7 +133,12 @@
     "type": "command",
     "language": "bash",
     "description": "Forward local port traffic directly to a Kubernetes deployment or pod.",
-    "tags": ["k8s", "kubernetes", "port-forward", "networking"],
+    "tags": [
+      "k8s",
+      "kubernetes",
+      "port-forward",
+      "networking"
+    ],
     "category": "Kubernetes",
     "platform": "all",
     "starred": true,
@@ -118,7 +154,12 @@
     "type": "command",
     "language": "bash",
     "description": "Extracts a specific key from a Kubernetes Secret object and decodes base64.",
-    "tags": ["k8s", "secret", "base64", "security"],
+    "tags": [
+      "k8s",
+      "secret",
+      "base64",
+      "security"
+    ],
     "category": "Kubernetes",
     "platform": "all",
     "starred": false,
@@ -134,7 +175,13 @@
     "type": "command",
     "language": "bash",
     "description": "Recursively scans a target directory for regular files modified in the past 24 hours.",
-    "tags": ["linux", "bash", "find", "sysadmin", "files"],
+    "tags": [
+      "linux",
+      "bash",
+      "find",
+      "sysadmin",
+      "files"
+    ],
     "category": "Linux & Bash",
     "platform": "linux",
     "starred": false,
@@ -150,7 +197,13 @@
     "type": "command",
     "language": "bash",
     "description": "Finds the PID of whatever process is holding a port open and forcefully terminates it.",
-    "tags": ["linux", "macos", "port", "kill", "troubleshooting"],
+    "tags": [
+      "linux",
+      "macos",
+      "port",
+      "kill",
+      "troubleshooting"
+    ],
     "category": "Linux & Bash",
     "platform": "all",
     "starred": true,
@@ -166,7 +219,13 @@
     "type": "recipe",
     "language": "bash",
     "description": "Prints detailed millisecond timing benchmarks for DNS, TCP, TLS, and TTFB.",
-    "tags": ["curl", "http", "latency", "dns", "performance"],
+    "tags": [
+      "curl",
+      "http",
+      "latency",
+      "dns",
+      "performance"
+    ],
     "category": "Curl & Network",
     "platform": "all",
     "starred": true,
@@ -182,7 +241,12 @@
     "type": "command",
     "language": "bash",
     "description": "Generates a custom 256-color palette pass before encoding to produce sharp, smooth GIFs.",
-    "tags": ["ffmpeg", "video", "gif", "media"],
+    "tags": [
+      "ffmpeg",
+      "video",
+      "gif",
+      "media"
+    ],
     "category": "FFmpeg",
     "platform": "all",
     "starred": false,
@@ -198,7 +262,13 @@
     "type": "command",
     "language": "bash",
     "description": "Dumps a Postgres database using compressed custom format (-F c).",
-    "tags": ["postgres", "sql", "database", "backup", "dump"],
+    "tags": [
+      "postgres",
+      "sql",
+      "database",
+      "backup",
+      "dump"
+    ],
     "category": "Database",
     "platform": "all",
     "starred": false,
@@ -214,7 +284,12 @@
     "type": "snippet",
     "language": "typescript",
     "description": "Type-safe debounce function that preserves function parameter types.",
-    "tags": ["typescript", "javascript", "debounce", "utility"],
+    "tags": [
+      "typescript",
+      "javascript",
+      "debounce",
+      "utility"
+    ],
     "category": "TypeScript & Code",
     "platform": "all",
     "starred": true,
