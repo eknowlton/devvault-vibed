@@ -37,6 +37,9 @@ export async function getStoredSnippets(): Promise<Snippet[]> {
 export async function persistSnippets(snippets: Snippet[]): Promise<boolean> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+    if (typeof window !== 'undefined' && window.electronAPI?.saveSnippetsToFile) {
+      window.electronAPI.saveSnippetsToFile(snippets).catch(() => {});
+    }
     return true;
   } catch (err) {
     console.error('Failed to persist snippets:', err);
@@ -166,6 +169,12 @@ export async function importSnippetsFromJson(
 // Server Configuration Persistence
 export async function getStoredServerConfig(): Promise<ServerConfig> {
   try {
+    if (typeof window !== 'undefined' && window.electronAPI?.getServerConfig) {
+      const electronCfg = await window.electronAPI.getServerConfig();
+      if (electronCfg) {
+        return { ...DEFAULT_SERVER_CONFIG, ...electronCfg };
+      }
+    }
     const raw = await AsyncStorage.getItem(SERVER_CONFIG_KEY);
     if (!raw) return DEFAULT_SERVER_CONFIG;
     return { ...DEFAULT_SERVER_CONFIG, ...JSON.parse(raw) };
@@ -177,6 +186,9 @@ export async function getStoredServerConfig(): Promise<ServerConfig> {
 export async function persistServerConfig(config: ServerConfig): Promise<boolean> {
   try {
     await AsyncStorage.setItem(SERVER_CONFIG_KEY, JSON.stringify(config));
+    if (typeof window !== 'undefined' && window.electronAPI?.saveServerConfig) {
+      window.electronAPI.saveServerConfig(config).catch(() => {});
+    }
     return true;
   } catch {
     return false;

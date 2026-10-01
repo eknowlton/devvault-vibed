@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -37,18 +38,46 @@ export const ServerModal: React.FC<ServerModalProps> = ({
 
   const [serverStatus, setServerStatus] = useState<ServerStatusResponse | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const [serverActionError, setServerActionError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState(false);
+  const [desktopPlatform, setDesktopPlatform] = useState<'win32' | 'linux' | 'darwin' | null>(null);
 
-  // Load config from storage on open
+  const isDesktop =
+    Platform.OS === 'web' &&
+    typeof window !== 'undefined' &&
+    Boolean(window.electronAPI?.isElectron);
+
+  // Load config and platform on open
   useEffect(() => {
     if (visible) {
+      setServerActionError(null);
       getStoredServerConfig().then((cfg) => {
         setConfig(cfg);
         checkServerHealth(cfg.port);
       });
+
+      if (isDesktop && window.electronAPI?.getPlatform) {
+        window.electronAPI.getPlatform().then((p) => setDesktopPlatform(p)).catch(() => {});
+      }
     }
-  }, [visible]);
+  }, [visible, isDesktop]);
+
+  // Listen to live Electron server state changes
+  useEffect(() => {
+    if (visible && isDesktop && window.electronAPI?.onServerStateChange) {
+      const unsubscribe = window.electronAPI.onServerStateChange((data) => {
+        if (data.running) {
+          checkServerHealth(data.port || config.port);
+        } else {
+          setServerStatus(null);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [visible, isDesktop, config.port]);
 
   const checkServerHealth = async (portNum: number) => {
     setIsChecking(true);
@@ -68,11 +97,84 @@ export const ServerModal: React.FC<ServerModalProps> = ({
     }
   };
 
+  // In-App Server Controls (Start / Stop directly without CLI)
+  const handleStartServer = async () => {
+    setIsStarting(true);
+    setServerActionError(null);
+    try {
+      const updatedConfig = { ...config, enabled: true };
+      setConfig(updatedConfig);
+      await persistServerConfig(updatedConfig);
+
+      if (isDesktop && window.electronAPI?.startServer) {
+        const res = await window.electronAPI.startServer(updatedConfig);
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to start API server in desktop app');
+        }
+      }
+
+      // Small delay for socket initialization, then check health
+      setTimeout(async () => {
+        await checkServerHealth(updatedConfig.port);
+        setIsStarting(false);
+      }, 300);
+    } catch (err: any) {
+      setServerActionError(err.message || 'Error starting server');
+      setIsStarting(false);
+    }
+  };
+
+  const handleStopServer = async () => {
+    setIsStopping(true);
+    setServerActionError(null);
+    try {
+      const updatedConfig = { ...config, enabled: false };
+      setConfig(updatedConfig);
+      await persistServerConfig(updatedConfig);
+
+      if (isDesktop && window.electronAPI?.stopServer) {
+        await window.electronAPI.stopServer();
+      } else {
+        // Attempt HTTP stop endpoint
+        try {
+          await fetch(`http://localhost:${config.port}/api/server/stop`, {
+            method: 'POST',
+            headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+          });
+        } catch {}
+      }
+
+      setTimeout(() => {
+        setServerStatus(null);
+        setIsStopping(false);
+      }, 300);
+    } catch (err: any) {
+      setServerActionError(err.message || 'Error stopping server');
+      setIsStopping(false);
+    }
+  };
+
+  const handleRestartServer = async () => {
+    await handleStopServer();
+    setTimeout(() => {
+      handleStartServer();
+    }, 400);
+  };
+
   const handleSaveConfig = async () => {
     await persistServerConfig(config);
     setSaveMessage(true);
     setTimeout(() => setSaveMessage(false), 2000);
     checkServerHealth(config.port);
+  };
+
+  const handleOpenBrowser = async () => {
+    const url = `http://localhost:${serverPort}/api/health`;
+    if (isDesktop && window.electronAPI?.openExternal) {
+      await window.electronAPI.openExternal(url);
+    } else {
+      Linking.openURL(url);
+    }
   };
 
   const handleCopyCommand = async (text: string, key: string) => {
@@ -95,6 +197,14 @@ export const ServerModal: React.FC<ServerModalProps> = ({
     ? `curl -s -H "Authorization: Bearer ${config.apiKey}" http://localhost:${serverPort}/api/snippets`
     : `curl -s -H "Authorization: Bearer YOUR_API_KEY" http://localhost:${serverPort}/api/snippets`;
 
+  const getPlatformLabel = () => {
+    if (desktopPlatform === 'win32') return 'Windows Desktop Edition';
+    if (desktopPlatform === 'darwin') return 'macOS Desktop Edition';
+    if (desktopPlatform === 'linux') return 'Linux Desktop Edition';
+    if (isDesktop) return 'Desktop Edition';
+    return 'Web / Browser Edition';
+  };
+
   return (
     <Modal
       visible={visible}
@@ -109,7 +219,10 @@ export const ServerModal: React.FC<ServerModalProps> = ({
             <View style={styles.titleRow}>
               <View style={[styles.statusDot, serverStatus ? styles.dotGreen : styles.dotGray]} />
               <Ionicons name="server-outline" size={20} color={colors.primary} />
-              <Text style={styles.headerTitle}>API Server & Sharing</Text>
+              <View>
+                <Text style={styles.headerTitle}>API Server & Sharing</Text>
+                <Text style={styles.headerSubtitle}>{getPlatformLabel()}</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={20} color={colors.textSecondary} />
@@ -117,82 +230,150 @@ export const ServerModal: React.FC<ServerModalProps> = ({
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={styles.scrollBody}>
-            {/* Live Server Status Banner */}
-            <View
-              style={[
-                styles.statusBanner,
-                serverStatus ? styles.bannerActive : styles.bannerInactive,
-              ]}
-            >
-              <View style={styles.bannerHeader}>
-                <Ionicons
-                  name={serverStatus ? 'radio' : 'radio-outline'}
-                  size={18}
-                  color={serverStatus ? colors.accentGreen : colors.textMuted}
-                />
-                <Text
-                  style={[
-                    styles.bannerStatusTitle,
-                    serverStatus ? { color: colors.accentGreen } : { color: colors.textMuted },
-                  ]}
-                >
-                  {serverStatus
-                    ? `SERVER ACTIVE ON PORT ${serverPort}`
-                    : `SERVER NOT RUNNING ON PORT ${serverPort}`}
-                </Text>
-                <TouchableOpacity
-                  style={styles.refreshBtn}
-                  onPress={() => checkServerHealth(config.port)}
-                  disabled={isChecking}
-                >
-                  <Ionicons
-                    name="refresh"
-                    size={14}
-                    color={colors.primary}
-                    style={isChecking ? styles.rotating : undefined}
-                  />
-                  <Text style={styles.refreshBtnText}>
-                    {isChecking ? 'Checking...' : 'Check Status'}
-                  </Text>
-                </TouchableOpacity>
+            {/* IN-APP SERVER POWER & CONTROL PANEL */}
+            <View style={styles.powerCard}>
+              <View style={styles.powerCardHeader}>
+                <View style={styles.powerTitleRow}>
+                  <View style={[styles.powerIndicator, serverStatus ? styles.powerIndicatorOn : styles.powerIndicatorOff]}>
+                    <Ionicons
+                      name={serverStatus ? 'radio' : 'power-outline'}
+                      size={18}
+                      color={serverStatus ? colors.accentGreen : colors.textMuted}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.powerTitle}>
+                      {serverStatus ? 'Embedded Server is Active' : 'Embedded Server is Stopped'}
+                    </Text>
+                    <Text style={styles.powerSubtitle}>
+                      {serverStatus
+                        ? `Listening on http://localhost:${serverPort}`
+                        : 'Enable API access directly inside DevVault with 1-click'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Primary Start / Stop Action Buttons */}
+                <View style={styles.powerButtonRow}>
+                  {serverStatus ? (
+                    <>
+                      <TouchableOpacity
+                        style={[styles.btnAction, styles.btnStop]}
+                        onPress={handleStopServer}
+                        disabled={isStopping}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="stop-circle-outline" size={16} color="#fff" />
+                        <Text style={styles.btnActionText}>
+                          {isStopping ? 'Stopping...' : 'Stop Server'}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.btnAction, styles.btnRestart]}
+                        onPress={handleRestartServer}
+                        disabled={isStarting || isStopping}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="refresh-outline" size={15} color={colors.primary} />
+                        <Text style={[styles.btnActionText, { color: colors.primary }]}>Restart</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.btnAction, styles.btnStart]}
+                      onPress={handleStartServer}
+                      disabled={isStarting}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="play" size={16} color="#0d1117" />
+                      <Text style={[styles.btnActionText, { color: '#0d1117', fontWeight: '800' }]}>
+                        {isStarting ? 'Starting...' : 'Enable & Start Server'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
-              {serverStatus ? (
-                <View style={styles.bannerStatsRow}>
-                  <Text style={styles.statItem}>
-                    Total: <Text style={styles.statVal}>{serverStatus.totalSnippets}</Text>
-                  </Text>
-                  <Text style={styles.statItem}>
-                    Commands: <Text style={styles.statVal}>{serverStatus.totalCommands ?? '-'}</Text>
-                  </Text>
-                  <Text style={styles.statItem}>
-                    Recipes: <Text style={styles.statVal}>{serverStatus.totalRecipes ?? '-'}</Text>
-                  </Text>
-                  <Text style={styles.statItem}>
-                    Public (🌐): <Text style={styles.statVal}>{serverStatus.publicSnippets}</Text>
-                  </Text>
-                  <Text style={styles.statItem}>
-                    Private (🔒): <Text style={styles.statVal}>{serverStatus.privateSnippets}</Text>
-                  </Text>
+              {serverActionError && (
+                <View style={styles.actionErrorBox}>
+                  <Ionicons name="alert-circle-outline" size={16} color={colors.accentRed} />
+                  <Text style={styles.actionErrorText}>{serverActionError}</Text>
                 </View>
-              ) : (
-                <View style={styles.startGuide}>
-                  <Text style={styles.startGuideText}>
-                    Start the background API server by running this command in your terminal:
-                  </Text>
-                  <View style={styles.cmdBox}>
-                    <Text style={styles.cmdText}>{startCommand}</Text>
-                    <TouchableOpacity
-                      style={styles.cmdCopyBtn}
-                      onPress={() => handleCopyCommand(startCommand, 'start')}
-                    >
-                      <Ionicons
-                        name={copiedKey === 'start' ? 'checkmark' : 'copy-outline'}
-                        size={14}
-                        color={copiedKey === 'start' ? colors.accentGreen : colors.textSecondary}
-                      />
-                    </TouchableOpacity>
+              )}
+
+              {/* Status and Browser Launch Bar */}
+              <View style={styles.powerStatusFooter}>
+                <View style={styles.footerLeft}>
+                  <Text style={styles.footerLabel}>STATUS:</Text>
+                  <View style={[styles.badgePill, serverStatus ? styles.badgeGreen : styles.badgeMuted]}>
+                    <Text style={[styles.badgePillText, serverStatus ? { color: colors.accentGreen } : { color: colors.textMuted }]}>
+                      {serverStatus ? `RUNNING (PORT ${serverPort})` : 'OFFLINE'}
+                    </Text>
                   </View>
+                </View>
+
+                <View style={styles.footerRight}>
+                  {serverStatus && (
+                    <TouchableOpacity
+                      style={styles.openBrowserBtn}
+                      onPress={handleOpenBrowser}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="open-outline" size={14} color={colors.primary} />
+                      <Text style={styles.openBrowserBtnText}>Open /api/health</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.refreshBtn}
+                    onPress={() => checkServerHealth(config.port)}
+                    disabled={isChecking}
+                  >
+                    <Ionicons
+                      name="refresh"
+                      size={14}
+                      color={colors.primary}
+                      style={isChecking ? styles.rotating : undefined}
+                    />
+                    <Text style={styles.refreshBtnText}>
+                      {isChecking ? 'Checking...' : 'Check Status'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Live Statistics when Running */}
+              {serverStatus && (
+                <View style={styles.liveStatsContainer}>
+                  <View style={styles.statChip}>
+                    <Text style={styles.statChipLabel}>Total</Text>
+                    <Text style={styles.statChipVal}>{serverStatus.totalSnippets}</Text>
+                  </View>
+                  <View style={styles.statChip}>
+                    <Text style={styles.statChipLabel}>Commands</Text>
+                    <Text style={styles.statChipVal}>{serverStatus.totalCommands ?? '-'}</Text>
+                  </View>
+                  <View style={styles.statChip}>
+                    <Text style={styles.statChipLabel}>Recipes</Text>
+                    <Text style={styles.statChipVal}>{serverStatus.totalRecipes ?? '-'}</Text>
+                  </View>
+                  <View style={styles.statChip}>
+                    <Text style={styles.statChipLabel}>Public 🌐</Text>
+                    <Text style={styles.statChipVal}>{serverStatus.publicSnippets}</Text>
+                  </View>
+                  <View style={styles.statChip}>
+                    <Text style={styles.statChipLabel}>Private 🔒</Text>
+                    <Text style={styles.statChipVal}>{serverStatus.privateSnippets}</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Offline Guidance */}
+              {!serverStatus && (
+                <View style={styles.offlineHelpRow}>
+                  <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
+                  <Text style={styles.offlineHelpText}>
+                    Click <Text style={styles.boldText}>"Enable & Start Server"</Text> above to start the embedded API server inside the app. Alternatively, run <Text style={styles.codeText}>{startCommand}</Text> in your terminal.
+                  </Text>
                 </View>
               )}
             </View>
@@ -278,6 +459,17 @@ export const ServerModal: React.FC<ServerModalProps> = ({
               </TouchableOpacity>
             </View>
 
+            {/* Desktop Editions Callout Banner */}
+            <View style={styles.desktopBannerBox}>
+              <Ionicons name="desktop-outline" size={20} color={colors.accentPurple} />
+              <View style={styles.desktopBannerContent}>
+                <Text style={styles.desktopBannerTitle}>Native Desktop Editions Available</Text>
+                <Text style={styles.desktopBannerDesc}>
+                  DevVault now runs natively on <Text style={styles.boldText}>Windows (.exe)</Text>, <Text style={styles.boldText}>Linux (.AppImage / .deb)</Text>, and <Text style={styles.boldText}>macOS (.dmg)</Text> with a fully embedded, zero-CLI background API server.
+                </Text>
+              </View>
+            </View>
+
             {/* API Endpoints & Curl Recipes */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>API ENDPOINTS & TERMINAL RECIPES</Text>
@@ -354,7 +546,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 </View>
               </View>
 
-              {/* Endpoint 2: Full-text Search */}
+              {/* Endpoint 4: Full-text Search */}
               <View style={styles.recipeCard}>
                 <View style={styles.recipeHeader}>
                   <View style={styles.methodBadge}>
@@ -378,7 +570,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 </View>
               </View>
 
-              {/* Endpoint 3: Raw Output */}
+              {/* Endpoint 5: Raw Output */}
               <View style={styles.recipeCard}>
                 <View style={styles.recipeHeader}>
                   <View style={styles.methodBadge}>
@@ -402,7 +594,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
                 </View>
               </View>
 
-              {/* Endpoint 4: Authenticated (Includes Private) */}
+              {/* Endpoint 6: Authenticated (Includes Private) */}
               <View style={styles.recipeCard}>
                 <View style={styles.recipeHeader}>
                   <View style={[styles.methodBadge, { backgroundColor: 'rgba(210, 168, 255, 0.2)' }]}>
@@ -447,7 +639,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     width: '100%',
-    maxWidth: 720,
+    maxWidth: 740,
     maxHeight: '92%',
     overflow: 'hidden',
   },
@@ -482,6 +674,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: 'monospace',
   },
+  headerSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontFamily: 'monospace',
+    marginTop: 1,
+  },
   closeBtn: {
     padding: 4,
   },
@@ -491,31 +689,164 @@ const styles = StyleSheet.create({
   scrollBody: {
     padding: 18,
   },
-  statusBanner: {
-    borderRadius: 8,
+  // In-App Server Control Panel
+  powerCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    borderRadius: 10,
     borderWidth: 1,
-    padding: 14,
+    borderColor: colors.borderLight,
+    padding: 16,
     marginBottom: 16,
   },
-  bannerActive: {
-    backgroundColor: 'rgba(63, 185, 80, 0.1)',
+  powerCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 14,
+  },
+  powerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    minWidth: 240,
+  },
+  powerIndicator: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  powerIndicatorOn: {
+    backgroundColor: 'rgba(63, 185, 80, 0.15)',
     borderColor: colors.accentGreen,
   },
-  bannerInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  powerIndicatorOff: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderColor: colors.border,
   },
-  bannerHeader: {
+  powerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: 'monospace',
+  },
+  powerSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  powerButtonRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
   },
-  bannerStatusTitle: {
+  btnAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  btnStart: {
+    backgroundColor: colors.accentGreen,
+  },
+  btnStop: {
+    backgroundColor: colors.accentRed,
+  },
+  btnRestart: {
+    backgroundColor: 'rgba(88, 166, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  btnActionText: {
     fontSize: 12,
     fontWeight: '700',
+    color: '#fff',
     fontFamily: 'monospace',
+  },
+  actionErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(248, 81, 73, 0.1)',
+    borderWidth: 1,
+    borderColor: colors.accentRed,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 10,
+  },
+  actionErrorText: {
+    color: colors.accentRed,
+    fontSize: 12,
     flex: 1,
+  },
+  powerStatusFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingTop: 12,
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textMuted,
+    fontFamily: 'monospace',
+  },
+  badgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  badgeGreen: {
+    backgroundColor: 'rgba(63, 185, 80, 0.15)',
+    borderColor: colors.accentGreen,
+  },
+  badgeMuted: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.border,
+  },
+  badgePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  openBrowserBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(88, 166, 255, 0.3)',
+  },
+  openBrowserBtnText: {
+    fontSize: 11,
+    color: colors.primary,
+    fontFamily: 'monospace',
+    fontWeight: '600',
   },
   refreshBtn: {
     flexDirection: 'row',
@@ -534,48 +865,57 @@ const styles = StyleSheet.create({
   rotating: {
     transform: [{ rotate: '45deg' }],
   },
-  bannerStatsRow: {
+  liveStatsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
-    marginTop: 4,
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
   },
-  statItem: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontFamily: 'monospace',
-  },
-  statVal: {
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  startGuide: {
-    marginTop: 4,
-  },
-  startGuideText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 8,
-  },
-  cmdBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.codeBg,
+  statChip: {
+    backgroundColor: colors.card,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: colors.codeBorder,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: colors.borderLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flex: 1,
+    minWidth: 80,
+    alignItems: 'center',
   },
-  cmdText: {
-    fontSize: 13,
-    color: colors.accentGreen,
+  statChipLabel: {
+    fontSize: 10,
+    color: colors.textSecondary,
     fontFamily: 'monospace',
-    fontWeight: '600',
   },
-  cmdCopyBtn: {
-    padding: 4,
+  statChipVal: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginTop: 2,
+    fontFamily: 'monospace',
+  },
+  offlineHelpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  offlineHelpText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    flex: 1,
+    lineHeight: 16,
+  },
+  codeText: {
+    fontFamily: 'monospace',
+    color: colors.accentGreen,
+    fontWeight: '700',
   },
   privacyNoticeBox: {
     flexDirection: 'row',
@@ -605,6 +945,32 @@ const styles = StyleSheet.create({
   boldText: {
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  desktopBannerBox: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(210, 168, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(210, 168, 255, 0.25)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    gap: 10,
+    alignItems: 'center',
+  },
+  desktopBannerContent: {
+    flex: 1,
+  },
+  desktopBannerTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accentPurple,
+    marginBottom: 3,
+    fontFamily: 'monospace',
+  },
+  desktopBannerDesc: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    lineHeight: 16,
   },
   section: {
     marginBottom: 20,

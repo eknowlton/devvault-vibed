@@ -20,6 +20,7 @@ interface SidebarProps {
   onOpenBackup: () => void;
   onOpenServer: () => void;
   onOpenImportRemote?: () => void;
+  serverActive?: boolean;
   isMobileDrawer?: boolean;
   onCloseDrawer?: () => void;
 }
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenBackup,
   onOpenServer,
   onOpenImportRemote,
+  serverActive,
   isMobileDrawer = false,
   onCloseDrawer,
 }) => {
@@ -347,15 +349,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <TouchableOpacity
-          style={styles.toolBtn}
+          style={[styles.toolBtn, serverActive && { borderColor: colors.accentGreen, backgroundColor: 'rgba(63, 185, 80, 0.08)' }]}
           onPress={() => {
             onOpenServer();
             if (isMobileDrawer && onCloseDrawer) onCloseDrawer();
           }}
         >
-          <Ionicons name="server-outline" size={16} color={colors.primary} />
-          <Text style={[styles.toolBtnText, { color: colors.primary, fontWeight: '700' }]}>
-            API Server & Sharing
+          <Ionicons name="server-outline" size={16} color={serverActive ? colors.accentGreen : colors.primary} />
+          <Text style={[styles.toolBtnText, { color: serverActive ? colors.accentGreen : colors.primary, fontWeight: '700' }]}>
+            API Server & Sharing {serverActive ? '●' : ''}
           </Text>
         </TouchableOpacity>
 

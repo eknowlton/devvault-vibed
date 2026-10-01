@@ -1,6 +1,9 @@
 {
   "name": "cli-programmer-notebook",
+  "productName": "DevVault",
   "version": "1.0.0",
+  "description": "DevVault: Developer CLI & Code Notebook with Embedded API Server",
+  "author": "DevVault Team",
   "main": "index.ts",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
@@ -16,6 +19,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
@@ -26,7 +31,68 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "api:start": "node server/apiServer.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:web": "expo export --platform web",
+    "desktop:start": "npm run build:web && electron electron/main.mjs --no-sandbox",
+    "desktop:dev": "electron electron/main.mjs --no-sandbox --dev",
+    "build:desktop:dir": "npm run build:web && electron-builder --dir",
+    "build:win": "npm run build:web && electron-builder --win",
+    "build:linux": "npm run build:web && electron-builder --linux",
+    "build:mac": "npm run build:web && electron-builder --mac",
+    "build:all": "npm run build:web && electron-builder -wlm"
+  },
+  "build": {
+    "appId": "com.devvault.notebook",
+    "productName": "DevVault",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "assets/**/*",
+      "devvault-data.json",
+      "server-config.json",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.mjs"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable",
+        "zip"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DevVault"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
+      "category": "Development",
+      "icon": "assets/icon.png",
+      "synopsis": "Developer CLI & Code Notebook with Embedded API Server"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.png"
+    }
   },
   "private": true
 }

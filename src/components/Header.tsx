@@ -20,6 +20,7 @@ interface HeaderProps {
   onOpenNewSnippet: () => void;
   onOpenServer: () => void;
   onOpenImportRemote?: () => void;
+  serverActive?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -31,6 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewSnippet,
   onOpenServer,
   onOpenImportRemote,
+  serverActive,
 }) => {
   const inputRef = useRef<TextInput>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -148,12 +150,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* API Server Button */}
         <TouchableOpacity
-          style={styles.serverBtn}
+          style={[styles.serverBtn, serverActive && { borderColor: colors.accentGreen }]}
           onPress={onOpenServer}
           activeOpacity={0.7}
         >
-          <Ionicons name="server-outline" size={15} color={colors.primary} />
-          {!isMobileLayout && <Text style={styles.serverBtnText}>API Server</Text>}
+          <View style={{ position: 'relative' }}>
+            <Ionicons name="server-outline" size={15} color={serverActive ? colors.accentGreen : colors.primary} />
+            {serverActive && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -3,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: colors.accentGreen,
+                }}
+              />
+            )}
+          </View>
+          {!isMobileLayout && (
+            <Text style={[styles.serverBtnText, serverActive && { color: colors.accentGreen }]}>
+              API Server
+            </Text>
+          )}
         </TouchableOpacity>
 
         {/* Remote Import Button */}

@@ -9,6 +9,7 @@ node_modules/
 .home/
 dist/
 dist-test/
+release/
 web-build/
 expo-env.d.ts
 server-config.json

@@ -78,6 +78,18 @@ npm run web
 # Opens http://localhost:8081
 ```
 
+#### Desktop App (Windows, macOS, Linux):
+```bash
+# Run desktop app directly:
+npm run desktop:start
+
+# Build standalone desktop packages in release/:
+npm run build:win    # Builds Windows (.exe installer & portable)
+npm run build:linux  # Builds Linux (.AppImage, .deb, .tar.gz)
+npm run build:mac    # Builds macOS (.dmg, .zip)
+npm run build:all    # Builds all desktop targets
+```
+
 #### Mobile (iOS / Android / Expo Go):
 ```bash
 # Start the Metro bundler with QR code for Expo Go:
@@ -182,7 +194,18 @@ Tap **"🖼️ IDE Card"** on any code snippet card to launch the editor preview
 
 DevVault includes a built-in, standalone Node.js HTTP server ([`server/apiServer.mjs`](server/apiServer.mjs)) with **zero external dependencies**. It allows other machines, teammates, or shell terminals to query your command library.
 
-### Starting the Server
+### Enabling the Server
+
+#### Method 1: Inside the Application (1-Click, No CLI Needed)
+You can start, stop, and configure the API server directly within DevVault without touching a terminal:
+1. Click the **"API Server"** button in the header or **"API Server & Sharing"** in the sidebar.
+2. Click **"Enable & Start Server"** (or toggle the power switch).
+3. The server immediately binds to your configured port (default `4141`) with real-time status monitoring.
+4. Customize port, Bearer API token, or remote write permissions and save with zero server restarts required.
+5. In the **Desktop App (Windows, macOS, Linux)**, the server can automatically launch in the background whenever you open DevVault!
+
+#### Method 2: Standalone CLI Execution
+For headless servers, SSH sessions, or background daemons:
 ```bash
 # Default mode (port 4141, public endpoints open)
 npm run api:start

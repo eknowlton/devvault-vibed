@@ -17,6 +17,7 @@ import { FilterState, Snippet } from './src/types/snippet';
 import {
   addOrUpdateSnippet,
   getStoredSnippets,
+  getStoredServerConfig,
   incrementSnippetCopyCount,
   removeSnippet,
   toggleSnippetStar,
@@ -74,6 +75,7 @@ export default function App() {
   const [isServerOpen, setIsServerOpen] = useState(false);
   const [isImportRemoteOpen, setIsImportRemoteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isServerActive, setIsServerActive] = useState(false);
 
   // Load initial data
   const loadData = async () => {
@@ -87,6 +89,27 @@ export default function App() {
     injectGlobalWebStyles();
     loadData();
   }, []);
+
+  // Monitor server health & Electron state
+  useEffect(() => {
+    const checkServerHealth = async () => {
+      try {
+        const cfg = await getStoredServerConfig();
+        const res = await fetch(`http://localhost:${cfg.port || 4141}/api/health`);
+        setIsServerActive(res.ok);
+      } catch {
+        setIsServerActive(false);
+      }
+    };
+    checkServerHealth();
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.electronAPI?.onServerStateChange) {
+      const unsub = window.electronAPI.onServerStateChange((data) => {
+        setIsServerActive(Boolean(data.running));
+      });
+      return () => unsub();
+    }
+  }, [isServerOpen]);
 
   // Web keyboard shortcuts
   useEffect(() => {
@@ -223,6 +246,7 @@ export default function App() {
             onOpenBackup={() => setIsBackupOpen(true)}
             onOpenServer={() => setIsServerOpen(true)}
             onOpenImportRemote={() => setIsImportRemoteOpen(true)}
+            serverActive={isServerActive}
           />
         )}
 
@@ -237,6 +261,7 @@ export default function App() {
             onOpenNewSnippet={() => handleOpenEditor()}
             onOpenServer={() => setIsServerOpen(true)}
             onOpenImportRemote={() => setIsImportRemoteOpen(true)}
+            serverActive={isServerActive}
           />
 
           {/* Snippet List */}
@@ -314,6 +339,7 @@ export default function App() {
               onOpenBackup={() => setIsBackupOpen(true)}
               onOpenServer={() => setIsServerOpen(true)}
               onOpenImportRemote={() => setIsImportRemoteOpen(true)}
+              serverActive={isServerActive}
               isMobileDrawer={true}
               onCloseDrawer={() => setIsMobileDrawerOpen(false)}
             />
