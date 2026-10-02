@@ -8,20 +8,34 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
 3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
 
-## Commands
+## Tooling & Command Execution Reference
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+> **See [AI_TOOLING.md](file:///home/ethan/projects/cli-programmer-notebook/AI_TOOLING.md) for the complete reference guide.**
 
+### Node.js & PATH Environment
+Always export the active Node v26 runtime in non-interactive subshells:
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+export PATH="/home/ethan/.nvm/versions/node/v26.10.0/bin:$PATH"
 ```
 
-Run lint and typecheck before declaring any task done.
+### Essential Commands
+```bash
+npm run test:all            # MANDATORY verification: runs typecheck and all 11 test suites
+npm run typecheck           # tsc --noEmit
+npm test                    # node tests/runAllTests.mjs
+HOME=/tmp npm run build:web # web bundle export (HOME=/tmp avoids sandbox permission errors)
+HOME=/tmp npm run lint      # lint code
+npm run desktop:dev         # start Electron in development against local Metro dev server
+npm run desktop:start       # build web bundle and launch Electron desktop app
+npm run build:desktop:dir   # package native desktop directory (release/linux-unpacked)
+npm run build:linux         # build Linux packages (AppImage, deb, tar.gz)
+npm run build:win           # build Windows packages (nsis, portable, zip)
+npm run build:mac           # build macOS packages (dmg, zip)
+npm run api:start           # run standalone embedded API server on port 4141
+npx expo install <pkg>      # ALWAYS use instead of npm install for Expo/RN packages
+```
+
+Run `npm run test:all` before declaring any task done.
 
 ## Navigation & Routing
 
