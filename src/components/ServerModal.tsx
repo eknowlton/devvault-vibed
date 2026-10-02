@@ -82,6 +82,19 @@ export const ServerModal: React.FC<ServerModalProps> = ({
   const checkServerHealth = async (portNum: number) => {
     setIsChecking(true);
     try {
+      if (isDesktop && window.electronAPI?.getServerStatus) {
+        const status = await window.electronAPI.getServerStatus();
+        if (status && 'running' in status && status.running) {
+          setServerStatus(status as ServerStatusResponse);
+          setIsChecking(false);
+          return;
+        } else if (status && 'running' in status && !status.running) {
+          setServerStatus(null);
+          setIsChecking(false);
+          return;
+        }
+      }
+
       const url = `http://localhost:${portNum}/api/health`;
       const res = await fetch(url, { method: 'GET' });
       if (res.ok) {
@@ -111,6 +124,12 @@ export const ServerModal: React.FC<ServerModalProps> = ({
         if (!res.success) {
           throw new Error(res.error || 'Failed to start API server in desktop app');
         }
+        if (window.electronAPI.getServerStatus) {
+          const status = await window.electronAPI.getServerStatus();
+          if (status && 'running' in status && status.running) {
+            setServerStatus(status as ServerStatusResponse);
+          }
+        }
       }
 
       // Small delay for socket initialization, then check health
@@ -133,7 +152,10 @@ export const ServerModal: React.FC<ServerModalProps> = ({
       await persistServerConfig(updatedConfig);
 
       if (isDesktop && window.electronAPI?.stopServer) {
-        await window.electronAPI.stopServer();
+        const res = await window.electronAPI.stopServer();
+        if (res && !res.success && res.error) {
+          throw new Error(res.error);
+        }
       } else {
         // Attempt HTTP stop endpoint
         try {
@@ -144,6 +166,7 @@ export const ServerModal: React.FC<ServerModalProps> = ({
         } catch {}
       }
 
+      setServerStatus(null);
       setTimeout(() => {
         setServerStatus(null);
         setIsStopping(false);

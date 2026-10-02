@@ -229,13 +229,19 @@ export function createApiServer(options = {}) {
     }
     // Initialize with default snippets
     try {
+      const dir = path.dirname(dataFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(dataFile, JSON.stringify(DEFAULT_SNIPPETS, null, 2), 'utf8');
-    } catch {}
+    } catch (e) {
+      console.warn('[DevVault] Note: could not write seed snippets to dataFile:', e.message);
+    }
     return DEFAULT_SNIPPETS;
   }
 
   function saveSnippets(snippets) {
     try {
+      const dir = path.dirname(dataFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(dataFile, JSON.stringify(snippets, null, 2), 'utf8');
       return true;
     } catch (err) {
@@ -799,13 +805,14 @@ export function createApiServer(options = {}) {
     allowWrite,
     dataFile,
     configFile,
-    listen: (listenPort) => {
+    listen: (listenPort, listenHost) => {
       const p = listenPort || port;
+      const h = listenHost || options.host || '0.0.0.0';
       return new Promise((resolve, reject) => {
         server.once('error', reject);
-        server.listen(p, () => {
+        server.listen(p, h, () => {
           server.removeListener('error', reject);
-          resolve({ port: p, url: `http://localhost:${p}` });
+          resolve({ port: p, host: h, url: `http://localhost:${p}` });
         });
       });
     },
@@ -817,13 +824,22 @@ export function createApiServer(options = {}) {
     },
     getStatus: () => {
       const snippets = loadSnippets();
+      const commands = snippets.filter((s) => s.type === 'command');
+      const recipes = snippets.filter((s) => s.type === 'recipe' || (Array.isArray(s.tags) && s.tags.includes('recipe')));
       return {
+        status: server.listening ? 'ok' : 'error',
+        version: '1.2.0',
+        mode: 'embedded',
         running: server.listening,
         port,
         url: `http://localhost:${port}`,
         totalSnippets: snippets.length,
         publicSnippets: snippets.filter((s) => !s.isPrivate).length,
         privateSnippets: snippets.filter((s) => s.isPrivate).length,
+        totalCommands: commands.length,
+        totalRecipes: recipes.length,
+        publicCommands: commands.filter((c) => !c.isPrivate).length,
+        publicRecipes: recipes.filter((r) => !r.isPrivate).length,
         allowWrite,
         requiresAuth: Boolean(apiKey),
       };
@@ -839,7 +855,7 @@ export async function startApiServer(options = {}) {
     await stopApiServer();
   }
   activeInstance = createApiServer(options);
-  const result = await activeInstance.listen(options.port);
+  const result = await activeInstance.listen(options.port, options.host || '0.0.0.0');
   if (!options.silent) {
     console.log(`\n======================================================`);
     console.log(`🚀 DevVault API Server is running on port ${activeInstance.port}`);

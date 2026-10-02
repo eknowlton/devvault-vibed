@@ -115,6 +115,13 @@ export default function App() {
   useEffect(() => {
     const checkServerHealth = async () => {
       try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined' && window.electronAPI?.getServerStatus) {
+          const status = await window.electronAPI.getServerStatus();
+          if (status && 'running' in status && typeof status.running === 'boolean') {
+            setIsServerActive(status.running);
+            return;
+          }
+        }
         const cfg = await getStoredServerConfig();
         const res = await fetch(`http://localhost:${cfg.port || 4141}/api/health`);
         setIsServerActive(res.ok);

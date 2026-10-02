@@ -25,7 +25,7 @@ export interface ElectronAPI {
   getPlatform: () => Promise<'win32' | 'linux' | 'darwin'>;
   startServer: (config: ServerConfig) => Promise<{ success: boolean; port?: number; url?: string; error?: string }>;
   stopServer: () => Promise<{ success: boolean; error?: string }>;
-  getServerStatus: () => Promise<{ running: boolean; port: number | null; url?: string; totalSnippets?: number }>;
+  getServerStatus: () => Promise<(ServerStatusResponse & { running: boolean; port: number; url: string }) | { running: false; port: null }>;
   getServerConfig: () => Promise<ServerConfig>;
   saveServerConfig: (config: ServerConfig) => Promise<boolean>;
   onServerStateChange: (callback: (data: { running: boolean; port?: number; url?: string }) => void) => () => void;

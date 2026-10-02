@@ -17,17 +17,59 @@ Menu.setApplicationMenu(null);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATA_FILE = path.join(__dirname, '..', 'devvault-data.json');
-const CONFIG_FILE = path.join(__dirname, '..', 'server-config.json');
 const DIST_INDEX = path.join(__dirname, '..', 'dist', 'index.html');
 
 let mainWindow = null;
 
+// Determine safe writable storage directory for user data & server configuration
+function getStoragePaths() {
+  const userDataDir = app.getPath('userData');
+  try {
+    if (!fs.existsSync(userDataDir)) {
+      fs.mkdirSync(userDataDir, { recursive: true });
+    }
+  } catch {}
+
+  const bundledDataFile = path.join(__dirname, '..', 'devvault-data.json');
+  const userDataFile = path.join(userDataDir, 'devvault-data.json');
+  const userConfigFile = path.join(userDataDir, 'server-config.json');
+
+  // In packaged app (Linux native binary, AppImage, deb, etc.), always use userData to avoid read-only asar.
+  // In development (unpackaged), if project root is writable, use project root; otherwise userData.
+  let dataFile = userDataFile;
+  let configFile = userConfigFile;
+
+  if (!app.isPackaged) {
+    const devDataFile = path.join(__dirname, '..', 'devvault-data.json');
+    const devConfigFile = path.join(__dirname, '..', 'server-config.json');
+    try {
+      fs.accessSync(path.dirname(devDataFile), fs.constants.W_OK);
+      dataFile = devDataFile;
+      configFile = devConfigFile;
+    } catch {
+      dataFile = userDataFile;
+      configFile = userConfigFile;
+    }
+  }
+
+  // Ensure dataFile exists: if not in userData, copy bundled seed data file over
+  if (!fs.existsSync(dataFile) && fs.existsSync(bundledDataFile)) {
+    try {
+      fs.copyFileSync(bundledDataFile, dataFile);
+    } catch (e) {
+      console.warn('[Electron] Note: could not seed data file from bundle:', e.message);
+    }
+  }
+
+  return { dataFile, configFile };
+}
+
 // Read stored server configuration
 function loadServerConfig() {
-  if (fs.existsSync(CONFIG_FILE)) {
+  const { configFile } = getStoragePaths();
+  if (fs.existsSync(configFile)) {
     try {
-      return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      return JSON.parse(fs.readFileSync(configFile, 'utf8'));
     } catch {}
   }
   return {
@@ -41,7 +83,10 @@ function loadServerConfig() {
 // Persist server configuration
 function saveServerConfig(cfg) {
   try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
+    const { configFile } = getStoragePaths();
+    const dir = path.dirname(configFile);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(configFile, JSON.stringify(cfg, null, 2), 'utf8');
     return true;
   } catch (err) {
     console.error('[Electron] Error writing server-config.json:', err);
@@ -67,6 +112,7 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false,
     },
     show: false,
   };
@@ -124,13 +170,15 @@ async function createWindow() {
 // IPC Handlers for In-App API Server Management
 ipcMain.handle('server:start', async (_event, customConfig) => {
   try {
+    const { dataFile, configFile } = getStoragePaths();
     const config = customConfig || loadServerConfig();
     const result = await startApiServer({
       port: config.port || 4141,
       apiKey: config.apiKey || '',
       allowWrite: Boolean(config.allowWrite),
-      dataFile: DATA_FILE,
-      configFile: CONFIG_FILE,
+      dataFile,
+      configFile,
+      host: '0.0.0.0',
       silent: false,
     });
 
@@ -187,7 +235,10 @@ ipcMain.handle('server:saveConfig', async (_event, cfg) => {
 // IPC Handlers for Snippet Sync
 ipcMain.handle('sync:saveSnippets', async (_event, snippets) => {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(snippets, null, 2), 'utf8');
+    const { dataFile } = getStoragePaths();
+    const dir = path.dirname(dataFile);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(dataFile, JSON.stringify(snippets, null, 2), 'utf8');
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -195,9 +246,10 @@ ipcMain.handle('sync:saveSnippets', async (_event, snippets) => {
 });
 
 ipcMain.handle('sync:loadSnippets', async () => {
-  if (fs.existsSync(DATA_FILE)) {
+  const { dataFile } = getStoragePaths();
+  if (fs.existsSync(dataFile)) {
     try {
-      const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
       if (Array.isArray(parsed)) return parsed;
     } catch {}
   }
@@ -248,13 +300,15 @@ app.whenReady().then(async () => {
   const cfg = loadServerConfig();
   if (cfg.enabled) {
     try {
+      const { dataFile, configFile } = getStoragePaths();
       console.log(`[Electron] Auto-starting embedded API server on port ${cfg.port || 4141}...`);
       await startApiServer({
         port: cfg.port || 4141,
         apiKey: cfg.apiKey || '',
         allowWrite: Boolean(cfg.allowWrite),
-        dataFile: DATA_FILE,
-        configFile: CONFIG_FILE,
+        dataFile,
+        configFile,
+        host: '0.0.0.0',
         silent: false,
       });
     } catch (err) {
