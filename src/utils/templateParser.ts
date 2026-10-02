@@ -122,3 +122,53 @@ export function renderTemplate(
     return resolution.value;
   });
 }
+
+/**
+ * Resolves available environment variables in a snippet/command content.
+ * When an environment is active and a variable is available in envValues,
+ * it replaces the placeholder with the environment variable's value.
+ * If a variable is NOT defined in envValues, the placeholder is preserved as-is.
+ *
+ * Example:
+ * Content: "curl {{URL:http://localhost}} -p {{PORT:8080}} {{FLAG}}"
+ * envValues: { PORT: "3000" }
+ * Result: "curl {{URL:http://localhost}} -p 3000 {{FLAG}}"
+ */
+export function resolveEnvironmentVariables(
+  content: string,
+  envValues: Record<string, string> = {}
+): string {
+  if (!content || !envValues || Object.keys(envValues).length === 0) {
+    return content;
+  }
+  PARAM_REGEX.lastIndex = 0;
+  return content.replace(PARAM_REGEX, (raw, name) => {
+    const envVal = envValues[name];
+    if (envVal !== undefined && envVal.trim() !== '') {
+      return envVal;
+    }
+    return raw;
+  });
+}
+
+/**
+ * Returns the list of parameter names from content that were matched and available in envValues.
+ */
+export function getAppliedEnvironmentVariables(
+  content: string,
+  envValues: Record<string, string> = {}
+): string[] {
+  if (!content || !envValues || Object.keys(envValues).length === 0) {
+    return [];
+  }
+  const placeholders = extractPlaceholders(content);
+  const applied: string[] = [];
+  for (const p of placeholders) {
+    const val = envValues[p.name];
+    if (val !== undefined && val.trim() !== '') {
+      applied.push(p.name);
+    }
+  }
+  return applied;
+}
+

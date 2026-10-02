@@ -351,6 +351,7 @@ export default function App() {
                 onOpenFiller={handleOpenFiller}
                 onOpenEmulator={handleOpenEmulator}
                 onOpenCodeCard={handleOpenCodeCard}
+                activeEnvironment={activeEnvironment}
               />
             )}
             ListEmptyComponent={

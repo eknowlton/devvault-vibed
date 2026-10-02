@@ -1,8 +1,10 @@
 import assert from 'node:assert';
 import {
   extractPlaceholders,
+  getAppliedEnvironmentVariables,
   getResolvedParameters,
   renderTemplate,
+  resolveEnvironmentVariables,
   resolveParameter,
 } from '../src/utils/templateParser.ts';
 import { SEED_ENVIRONMENTS } from '../src/storage/environmentStorage.ts';
@@ -132,5 +134,38 @@ assert.strictEqual(podPortRes.source, 'default');
 assert.strictEqual(podPortRes.value, '80');
 
 console.log('✔ Test 5 Passed: getResolvedParameters accurately classifies sources (user, environment, default).');
+
+// Test 6: resolveEnvironmentVariables displays environment variable value when available
+const rawSnippetContent =
+  'kubectl port-forward deployment/{{DEPLOYMENT_NAME:api-service}} {{LOCAL_PORT:8080}}:{{POD_PORT:80}} -n {{NAMESPACE:default}}';
+
+// In Development: DEPLOYMENT_NAME (api-dev), LOCAL_PORT (3000), NAMESPACE (dev) are available; POD_PORT is not.
+const displayedDev = resolveEnvironmentVariables(rawSnippetContent, devEnv.variables);
+assert.strictEqual(
+  displayedDev,
+  'kubectl port-forward deployment/api-dev 3000:{{POD_PORT:80}} -n dev',
+  'Available environment variables should be substituted while preserving unconfigured placeholders'
+);
+
+// In Production: DEPLOYMENT_NAME (api-prod), LOCAL_PORT (443), NAMESPACE (production) are available; POD_PORT is not.
+const displayedProd = resolveEnvironmentVariables(rawSnippetContent, prodEnv.variables);
+assert.strictEqual(
+  displayedProd,
+  'kubectl port-forward deployment/api-prod 443:{{POD_PORT:80}} -n production',
+  'Production values should display when Production environment is selected'
+);
+console.log('✔ Test 6 Passed: resolveEnvironmentVariables substitutes available environment variables in snippet content.');
+
+// Test 7: getAppliedEnvironmentVariables detects matching available variables
+const appliedDev = getAppliedEnvironmentVariables(rawSnippetContent, devEnv.variables);
+assert.deepStrictEqual(
+  appliedDev.sort(),
+  ['DEPLOYMENT_NAME', 'LOCAL_PORT', 'NAMESPACE'].sort(),
+  'Should identify all placeholders that matched active environment variables'
+);
+
+const emptyApplied = getAppliedEnvironmentVariables('git status', devEnv.variables);
+assert.strictEqual(emptyApplied.length, 0, 'Should return empty array when no placeholders exist');
+console.log('✔ Test 7 Passed: getAppliedEnvironmentVariables correctly tracks matched environment variables.');
 
 console.log('All Environment Variable tests passed successfully!\n');

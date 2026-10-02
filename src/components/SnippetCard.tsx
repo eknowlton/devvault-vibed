@@ -8,7 +8,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { Snippet } from '../types/snippet';
-import { hasPlaceholders } from '../utils/templateParser';
+import { type AppEnvironment } from '../types/environment';
+import {
+  getAppliedEnvironmentVariables,
+  hasPlaceholders,
+  resolveEnvironmentVariables,
+} from '../utils/templateParser';
 import { copyToClipboard } from '../utils/clipboard';
 import { SyntaxCodeBlock } from './SyntaxCodeBlock';
 import { TagBadge } from './TagBadge';
@@ -25,6 +30,7 @@ interface SnippetCardProps {
   onOpenFiller: (snippet: Snippet) => void;
   onOpenEmulator?: (snippet: Snippet) => void;
   onOpenCodeCard?: (snippet: Snippet) => void;
+  activeEnvironment?: AppEnvironment | null;
 }
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({
@@ -39,13 +45,23 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
   onOpenFiller,
   onOpenEmulator,
   onOpenCodeCard,
+  activeEnvironment,
 }) => {
   const [copiedQuick, setCopiedQuick] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [showRawTemplate, setShowRawTemplate] = useState(false);
+
+  const envVars = activeEnvironment?.variables || {};
+  const appliedEnvVars = getAppliedEnvironmentVariables(snippet.content, envVars);
+  const hasEnvApplied = appliedEnvVars.length > 0;
   const isParameterized = hasPlaceholders(snippet.content);
 
+  const displayedContent = showRawTemplate
+    ? snippet.content
+    : resolveEnvironmentVariables(snippet.content, envVars);
+
   const handleQuickCopy = async () => {
-    const success = await copyToClipboard(snippet.content);
+    const success = await copyToClipboard(displayedContent);
     if (success) {
       setCopiedQuick(true);
       onCopyIncrement(snippet.id);
@@ -90,6 +106,24 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
               label={snippet.platform}
               variant="platform"
             />
+          )}
+          {hasEnvApplied && activeEnvironment && (
+            <TouchableOpacity
+              style={[
+                styles.envBadge,
+                {
+                  borderColor: `${activeEnvironment.color}66`,
+                  backgroundColor: `${activeEnvironment.color}15`,
+                },
+              ]}
+              onPress={() => setShowRawTemplate((prev) => !prev)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.envBadgeDot, { backgroundColor: activeEnvironment.color }]} />
+              <Text style={[styles.envBadgeText, { color: activeEnvironment.color }]}>
+                {showRawTemplate ? 'Raw' : activeEnvironment.name}
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -158,7 +192,7 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
 
       {/* Code Block with expandable full view */}
       <SyntaxCodeBlock
-        code={snippet.content}
+        code={displayedContent}
         language={snippet.language}
         onCopied={() => onCopyIncrement(snippet.id)}
         collapsible={true}
@@ -188,7 +222,20 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
           {onOpenEmulator && snippet.type === 'command' && (
             <TouchableOpacity
               style={styles.emulateBtn}
-              onPress={() => onOpenEmulator(snippet)}
+              onPress={() =>
+                onOpenEmulator({
+                  ...snippet,
+                  content: displayedContent,
+                  simulatedPrompt: resolveEnvironmentVariables(
+                    snippet.simulatedPrompt || '',
+                    envVars
+                  ),
+                  simulatedComment: resolveEnvironmentVariables(
+                    snippet.simulatedComment || '',
+                    envVars
+                  ),
+                })
+              }
               activeOpacity={0.8}
             >
               <Ionicons name="terminal-outline" size={13} color={colors.accentGreen} />
@@ -199,7 +246,12 @@ export const SnippetCard: React.FC<SnippetCardProps> = ({
           {onOpenCodeCard && snippet.type === 'snippet' && (
             <TouchableOpacity
               style={styles.codeCardBtn}
-              onPress={() => onOpenCodeCard(snippet)}
+              onPress={() =>
+                onOpenCodeCard({
+                  ...snippet,
+                  content: displayedContent,
+                })
+              }
               activeOpacity={0.8}
             >
               <Ionicons name="image-outline" size={13} color={colors.secondary} />
@@ -388,6 +440,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
+    fontFamily: 'monospace',
+  },
+  envBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginLeft: 2,
+  },
+  envBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  envBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
     fontFamily: 'monospace',
   },
 });
