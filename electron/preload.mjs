@@ -1,15 +1,30 @@
-// Set data attributes on html element for platform-specific desktop styling
+// Set data attributes on html element and inject initial pointer cursor styles for Electron
 if (typeof document !== 'undefined') {
-  const setPlatformAttrs = () => {
+  const setPlatformAttrsAndStyles = () => {
     if (document.documentElement) {
       document.documentElement.setAttribute('data-electron', 'true');
       document.documentElement.setAttribute('data-electron-platform', process.platform);
     }
+    if (document.head && !document.getElementById('electron-base-pointer-styles')) {
+      const style = document.createElement('style');
+      style.id = 'electron-base-pointer-styles';
+      style.textContent = `
+        button, a, [role="button"], [role="tab"], [role="link"], .r-cursor-1loqt21, div[tabindex="0"]:not(input):not(textarea) {
+          cursor: pointer !important;
+          -webkit-app-region: no-drag !important;
+        }
+        button *, a *, [role="button"] *, [role="tab"] *, [role="link"] *, .r-cursor-1loqt21 *, div[tabindex="0"]:not(input):not(textarea) * {
+          cursor: pointer !important;
+          -webkit-app-region: no-drag !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
   };
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setPlatformAttrs);
+    document.addEventListener('DOMContentLoaded', setPlatformAttrsAndStyles);
   } else {
-    setPlatformAttrs();
+    setPlatformAttrsAndStyles();
   }
 }
 

@@ -90,10 +90,23 @@ assert.ok(
   'injectGlobalWebStyles.ts must declare no-drag region for buttons and inputs'
 );
 assert.ok(
-  stylesContent.includes('html[data-electron="true"][data-electron-platform="darwin"]'),
-  'injectGlobalWebStyles.ts must handle macOS traffic light inset spacing'
+  stylesContent.includes('cursor: pointer !important'),
+  'injectGlobalWebStyles.ts must enforce cursor: pointer !important for interactive elements'
+);
+assert.ok(
+  stylesContent.includes('.r-cursor-1loqt21 *') || stylesContent.includes('.r-cursor-1loqt21'),
+  'injectGlobalWebStyles.ts must target .r-cursor-1loqt21 and descendants for pointer cursor'
+);
+assert.ok(
+  stylesContent.includes('div[tabindex="0"]'),
+  'injectGlobalWebStyles.ts must target div[tabindex="0"] for touchable buttons'
 );
 
-console.log('✔ Test 3 Passed: Global styles support draggable frameless header and interactive controls.\n');
+assert.ok(
+  preloadContent.includes('electron-base-pointer-styles'),
+  'preload.mjs must inject initial electron-base-pointer-styles stylesheet'
+);
+
+console.log('✔ Test 3 Passed: Global styles & preload enforce pointer cursor on all buttons and touchables.\n');
 
 console.log('All Electron Window & Menu Bar configuration tests passed successfully!\n');
