@@ -16,6 +16,7 @@
 [![Expo SDK 57](https://img.shields.io/badge/Expo-SDK_57-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
 [![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vibe Coded with Gemini Anti-Gravity](https://img.shields.io/badge/Vibe_Coded_Using-Gemini_Anti--Gravity-7928CA?style=for-the-badge&logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 [![Platform](https://img.shields.io/badge/Platform-Web_•_iOS_•_Android_•_Desktop-8A2BE2?style=for-the-badge)](https://github.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
@@ -554,6 +555,18 @@ npm run typecheck
 # Check dependency health
 npx expo-doctor
 ```
+
+---
+
+## 🛸 Vibe Coded with Gemini Anti-Gravity
+
+This entire application and repository was vibe coded and architected using **Google DeepMind's Gemini Anti-Gravity** agentic pair programming workflow.
+
+<div align="center">
+
+[![Vibe Coded with Gemini Anti-Gravity](assets/badges/vibe-coded-gemini-antigravity.svg)](https://deepmind.google/technologies/gemini/)
+
+</div>
 
 ---
 

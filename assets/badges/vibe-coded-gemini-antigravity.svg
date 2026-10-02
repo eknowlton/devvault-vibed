@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="290" height="28" viewBox="0 0 290 28" role="img" aria-label="Vibe Coded With: Gemini Anti-Gravity">
+  <title>Vibe Coded With: Gemini Anti-Gravity</title>
+  <defs>
+    <linearGradient id="gemini-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7928CA"/>
+      <stop offset="50%" stop-color="#9B51E0"/>
+      <stop offset="100%" stop-color="#4285F4"/>
+    </linearGradient>
+    <clipPath id="badge-clip">
+      <rect width="290" height="28" rx="4" fill="#ffffff"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#badge-clip)">
+    <!-- Left label background -->
+    <rect x="0" y="0" width="125" height="28" fill="#181926"/>
+    <!-- Right message background with Gemini gradient -->
+    <rect x="125" y="0" width="165" height="28" fill="url(#gemini-grad)"/>
+    <!-- Subtle top highlight overlay -->
+    <rect x="0" y="0" width="290" height="1" fill="#ffffff" fill-opacity="0.12"/>
+  </g>
+  <!-- Left text: VIBE CODED WITH -->
+  <g fill="#CAD3F5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1">
+    <text x="62.5" y="17.5" text-anchor="middle">VIBE CODED WITH</text>
+  </g>
+  <!-- Right content: Gemini Icon + GEMINI ANTI-GRAVITY -->
+  <g transform="translate(136, 6)">
+    <!-- Gemini 4-point sparkle icon -->
+    <path d="M8 0C8 4.418 4.418 8 0 8C4.418 8 8 11.582 8 16C8 11.582 11.582 8 16 8C11.582 8 8 4.418 8 0Z" fill="#FFFFFF"/>
+  </g>
+  <g fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="9.5" font-weight="800" letter-spacing="0.8">
+    <text x="216" y="17.5" text-anchor="middle">GEMINI ANTI-GRAVITY</text>
+  </g>
+</svg>
