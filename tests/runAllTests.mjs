@@ -23,6 +23,7 @@ const testSuites = [
   { name: 'IDE Code Snippet Social Cards', file: 'tests/testCodeSnippetCard.mjs' },
   { name: 'SVG Card XML Well-Formedness', file: 'tests/validateSvgXml.mjs' },
   { name: 'Programmatic Embedded API Server', file: 'tests/testEmbeddedServer.mjs' },
+  { name: 'App-Wide Environments & Variables', file: 'tests/testEnvironmentVariables.mjs' },
 ];
 
 async function runSuite(suite) {

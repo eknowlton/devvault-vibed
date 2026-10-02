@@ -447,6 +447,36 @@ When you click **"Fill & Run"** on any card containing parameters:
 
 ---
 
+## 🌍 App-Wide Environments & Template Variables
+
+Stop manually re-typing hostnames, port numbers, namespaces, and cluster identifiers across dozens of snippets!
+
+DevVault provides **App-Wide Environments** (`Development`, `Staging`, `Production`, and unlimited custom environments) that define global parameter values that automatically resolve into your template snippets.
+
+### 🎯 Precedence Hierarchy
+When a recipe or command template is evaluated, parameters resolve following a clean 4-tier hierarchy:
+
+1. **User Overrides**: Values explicitly typed or modified in the **Parameter Filler Modal**.
+2. **Active Environment**: Variable values defined on the currently selected environment profile (e.g. `PORT=3000` in Development vs `PORT=443` in Production).
+3. **Snippet Inline Default**: The snippet author's built-in fallback (e.g. `{{LOCAL_PORT:8080}}`).
+4. **Empty String**: Clean fallback if neither user input, active environment, nor default exists.
+
+### 🌟 Seed Environments Out of the Box
+| Environment | Badge Color | Pre-Configured Variables |
+| :--- | :--- | :--- |
+| **Development** | 🟢 Emerald Green (`#3fb950`) | `PORT=3000`, `LOCAL_PORT=3000`, `HOST=localhost`, `API_URL=http://localhost:3000`, `NAMESPACE=dev`, `CONTAINER_NAME=web_dev`, `DEPLOYMENT_NAME=api-dev`, `MAIN_BRANCH=main` |
+| **Staging** | 🟡 Amber Gold (`#d29922`) | `PORT=8080`, `LOCAL_PORT=8080`, `HOST=staging.internal`, `API_URL=https://staging-api.internal`, `NAMESPACE=staging`, `CONTAINER_NAME=web_staging`, `DEPLOYMENT_NAME=api-staging`, `MAIN_BRANCH=staging` |
+| **Production** | 🔴 Coral Red (`#f85149`) | `PORT=443`, `LOCAL_PORT=443`, `HOST=prod.internal`, `API_URL=https://api.internal`, `NAMESPACE=production`, `CONTAINER_NAME=web_prod`, `DEPLOYMENT_NAME=api-prod`, `MAIN_BRANCH=main` |
+
+### 🛠️ Key Environment Features
+- **Global Header Badge**: Visible active environment status button (`[ 🟢 Development ▾ ]`) with one-click access to the environment manager.
+- **Sidebar Integration**: Active environment profile switcher in the sidebar and drawer navigation.
+- **In-Modal Environment Switcher**: Switch from `Development` to `Production` directly within the **Parameter Filler Modal** to watch command parameters transform instantly in live preview.
+- **Visual Source Indicators**: Parameter inputs show badges distinguishing `ENV: Development` (green), `DEFAULT` (gray), or `CUSTOM` (blue) values.
+- **Portability (.env & JSON)**: Import `.env` files or JSON objects with one click, or export your environment variables directly to your clipboard.
+
+---
+
 ## ⌨️ Keyboard Shortcuts
 
 Designed for power users who rarely want their fingers to leave the keyboard:

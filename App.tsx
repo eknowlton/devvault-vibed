@@ -34,6 +34,16 @@ import { ServerModal } from './src/components/ServerModal';
 import { TerminalEmulatorModal } from './src/components/TerminalEmulatorModal';
 import { ExternalVaultImportModal } from './src/components/ExternalVaultImportModal';
 import { CodeSnippetCardModal } from './src/components/CodeSnippetCardModal';
+import { EnvironmentModal } from './src/components/EnvironmentModal';
+import { type AppEnvironment } from './src/types/environment';
+import {
+  addOrUpdateEnvironment,
+  deleteEnvironment,
+  getActiveEnvironmentId,
+  getStoredEnvironments,
+  resetEnvironmentsToSeed,
+  setActiveEnvironmentId,
+} from './src/storage/environmentStorage';
 import { injectGlobalWebStyles } from './src/theme/injectGlobalWebStyles';
 
 // Initialize web darkmode scrollbar and focus styles
@@ -77,11 +87,22 @@ export default function App() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isServerActive, setIsServerActive] = useState(false);
 
+  // App-Wide Environments State
+  const [environments, setEnvironments] = useState<AppEnvironment[]>([]);
+  const [activeEnvironmentId, setActiveEnvironmentIdState] = useState<string>('');
+  const [isEnvironmentModalOpen, setIsEnvironmentModalOpen] = useState(false);
+
   // Load initial data
   const loadData = async () => {
     setLoading(true);
     const data = await getStoredSnippets();
     setSnippets(data);
+
+    const envs = await getStoredEnvironments();
+    setEnvironments(envs);
+    const activeId = await getActiveEnvironmentId();
+    setActiveEnvironmentIdState(activeId);
+
     setLoading(false);
   };
 
@@ -231,6 +252,37 @@ export default function App() {
     setSnippets(updatedSnippets);
   };
 
+  // Active environment memoization
+  const activeEnvironment = useMemo(() => {
+    return (
+      environments.find((e) => e.id === activeEnvironmentId) ||
+      environments[0] ||
+      null
+    );
+  }, [environments, activeEnvironmentId]);
+
+  const handleSelectActiveEnvironment = async (id: string) => {
+    await setActiveEnvironmentId(id);
+    setActiveEnvironmentIdState(id);
+  };
+
+  const handleSaveEnvironment = async (env: AppEnvironment) => {
+    const updated = await addOrUpdateEnvironment(env);
+    setEnvironments(updated);
+  };
+
+  const handleDeleteEnvironment = async (id: string) => {
+    const result = await deleteEnvironment(id);
+    setEnvironments(result.environments);
+    setActiveEnvironmentIdState(result.activeId);
+  };
+
+  const handleResetEnvironments = async () => {
+    const resetEnvs = await resetEnvironmentsToSeed();
+    setEnvironments(resetEnvs);
+    setActiveEnvironmentIdState(resetEnvs[0].id);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
@@ -247,6 +299,10 @@ export default function App() {
             onOpenServer={() => setIsServerOpen(true)}
             onOpenImportRemote={() => setIsImportRemoteOpen(true)}
             serverActive={isServerActive}
+            activeEnvironment={activeEnvironment}
+            environments={environments}
+            onOpenEnvironmentModal={() => setIsEnvironmentModalOpen(true)}
+            onSelectEnvironment={handleSelectActiveEnvironment}
           />
         )}
 
@@ -262,6 +318,8 @@ export default function App() {
             onOpenServer={() => setIsServerOpen(true)}
             onOpenImportRemote={() => setIsImportRemoteOpen(true)}
             serverActive={isServerActive}
+            activeEnvironment={activeEnvironment}
+            onOpenEnvironmentModal={() => setIsEnvironmentModalOpen(true)}
           />
 
           {/* Snippet List */}
@@ -340,6 +398,10 @@ export default function App() {
               onOpenServer={() => setIsServerOpen(true)}
               onOpenImportRemote={() => setIsImportRemoteOpen(true)}
               serverActive={isServerActive}
+              activeEnvironment={activeEnvironment}
+              environments={environments}
+              onOpenEnvironmentModal={() => setIsEnvironmentModalOpen(true)}
+              onSelectEnvironment={handleSelectActiveEnvironment}
               isMobileDrawer={true}
               onCloseDrawer={() => setIsMobileDrawerOpen(false)}
             />
@@ -371,6 +433,10 @@ export default function App() {
             handleCopyIncrement(fillerSnippet.id);
           }
         }}
+        activeEnvironment={activeEnvironment}
+        environments={environments}
+        onSelectEnvironment={handleSelectActiveEnvironment}
+        onOpenEnvironmentModal={() => setIsEnvironmentModalOpen(true)}
       />
 
       {/* Backup & Portability Modal */}
@@ -413,6 +479,18 @@ export default function App() {
         existingSnippets={snippets}
         onClose={() => setIsImportRemoteOpen(false)}
         onImportComplete={handleImportComplete}
+      />
+
+      {/* App Environment Manager Modal */}
+      <EnvironmentModal
+        visible={isEnvironmentModalOpen}
+        environments={environments}
+        activeEnvironmentId={activeEnvironmentId}
+        onClose={() => setIsEnvironmentModalOpen(false)}
+        onSelectActive={handleSelectActiveEnvironment}
+        onSaveEnvironment={handleSaveEnvironment}
+        onDeleteEnvironment={handleDeleteEnvironment}
+        onResetDefaults={handleResetEnvironments}
       />
     </SafeAreaView>
   );

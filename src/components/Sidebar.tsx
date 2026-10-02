@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { FilterState, PlatformTarget, Snippet, SnippetType } from '../types/snippet';
+import { type AppEnvironment } from '../types/environment';
 import { TagBadge } from './TagBadge';
 
 interface SidebarProps {
@@ -23,6 +24,10 @@ interface SidebarProps {
   serverActive?: boolean;
   isMobileDrawer?: boolean;
   onCloseDrawer?: () => void;
+  activeEnvironment?: AppEnvironment | null;
+  environments?: AppEnvironment[];
+  onOpenEnvironmentModal?: () => void;
+  onSelectEnvironment?: (id: string) => Promise<void> | void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,6 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   serverActive,
   isMobileDrawer = false,
   onCloseDrawer,
+  activeEnvironment,
+  environments = [],
+  onOpenEnvironmentModal,
+  onSelectEnvironment,
 }) => {
   // Aggregate categories
   const categoriesMap: Record<string, number> = {};
@@ -133,6 +142,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </TouchableOpacity>
 
       <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={Platform.OS === 'web'}>
+        {/* App Environments Section */}
+        {environments.length > 0 && onOpenEnvironmentModal && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>ENVIRONMENT</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  onOpenEnvironmentModal();
+                  if (isMobileDrawer && onCloseDrawer) onCloseDrawer();
+                }}
+                style={styles.manageSectionBtn}
+              >
+                <Ionicons name="options-outline" size={13} color={colors.primary} />
+                <Text style={styles.manageSectionText}>Manage</Text>
+              </TouchableOpacity>
+            </View>
+
+            {environments.map((env) => {
+              const isActive = env.id === activeEnvironment?.id;
+              return (
+                <TouchableOpacity
+                  key={env.id}
+                  style={[styles.navItem, isActive && styles.navItemActive]}
+                  onPress={() => {
+                    if (onSelectEnvironment) onSelectEnvironment(env.id);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.envDot, { backgroundColor: env.color }]} />
+                  <Text
+                    style={[
+                      styles.navItemText,
+                      isActive && { color: colors.textPrimary, fontWeight: '700' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {env.name}
+                  </Text>
+                  {isActive && (
+                    <View
+                      style={[
+                        styles.activeEnvPill,
+                        { backgroundColor: `${env.color}22`, borderColor: env.color },
+                      ]}
+                    >
+                      <Text style={[styles.activeEnvPillText, { color: env.color }]}>
+                        ACTIVE
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
         {/* Quick Views */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>LIBRARY</Text>
@@ -333,6 +398,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Tools */}
       <View style={styles.footerTools}>
+        {onOpenEnvironmentModal && (
+          <TouchableOpacity
+            style={styles.toolBtn}
+            onPress={() => {
+              onOpenEnvironmentModal();
+              if (isMobileDrawer && onCloseDrawer) onCloseDrawer();
+            }}
+          >
+            <Ionicons name="earth-outline" size={16} color={activeEnvironment?.color || colors.primary} />
+            <Text style={[styles.toolBtnText, { color: activeEnvironment?.color || colors.primary, fontWeight: '700' }]}>
+              Environment: {activeEnvironment?.name || 'Default'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {onOpenImportRemote && (
           <TouchableOpacity
             style={styles.toolBtn}
@@ -449,13 +529,50 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 20,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  manageSectionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+  },
+  manageSectionText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.primary,
+    fontFamily: 'monospace',
+  },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.textMuted,
     fontFamily: 'monospace',
     letterSpacing: 0.8,
-    marginBottom: 8,
+  },
+  envDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  activeEnvPill: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    marginLeft: 4,
+  },
+  activeEnvPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    fontFamily: 'monospace',
   },
   navItem: {
     flexDirection: 'row',

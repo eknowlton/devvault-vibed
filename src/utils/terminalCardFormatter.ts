@@ -239,7 +239,7 @@ export function generateSvgTerminalCard(options: TerminalCardOptions): string {
   <circle cx="72" cy="34" r="5.5" fill="#27c93f" />
 
   <!-- Window Title -->
-  <text x="${cardWidth / 2}" y="38" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#6e7681">${escapeXml(options.title || 'DevVault Terminal Emulation')}</text>
+  <text x="${cardWidth / 2}" y="38" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#6e7681">${escapeXml(windowTitle)}</text>
 
   <!-- Status Badges -->
   <rect x="${cardWidth - 165}" y="26" width="60" height="18" rx="9" fill="rgba(63, 185, 80, 0.15)" stroke="#3fb950" stroke-width="0.8" />

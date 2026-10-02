@@ -40,15 +40,29 @@ type TabMode = 'preview' | 'customize' | 'share';
 type ThemeMode = 'cyberpunk' | 'tokyo' | 'dracula' | 'matrix' | 'minimal';
 type PlaybackSpeed = '1x' | '2x' | 'instant';
 
-export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
+interface TerminalEmulatorContentProps {
+  visible: boolean;
+  snippet: Snippet;
+  onClose: () => void;
+  onSaveSnippetOutput?: (
+    snippetId: string,
+    expectedOutput: string,
+    duration: string,
+    prompt: string,
+    simulatedUser?: string,
+    simulatedHost?: string,
+    simulatedCwd?: string,
+    simulatedComment?: string
+  ) => void;
+}
+
+const TerminalEmulatorContent: React.FC<TerminalEmulatorContentProps> = ({
   visible,
   snippet,
   onClose,
   onSaveSnippetOutput,
 }) => {
-  if (!snippet || snippet.type !== 'command') return null;
-
-  // Synthesis fallback if snippet has no expected output yet
+  // Synthesis fallback if snippet has no expectedOutput yet
   const getDefaultOutput = (item: Snippet): string => {
     if (item.expectedOutput) return item.expectedOutput;
     if (item.category === 'Git') {
@@ -357,8 +371,7 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Header */}
           <View style={styles.header}>
@@ -979,6 +992,27 @@ export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
           </ScrollView>
         </View>
       </View>
+  );
+};
+
+export const TerminalEmulatorModal: React.FC<TerminalEmulatorModalProps> = ({
+  visible,
+  snippet,
+  onClose,
+  onSaveSnippetOutput,
+}) => {
+  if (!visible || !snippet || snippet.type !== 'command') {
+    return null;
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TerminalEmulatorContent
+        visible={visible}
+        snippet={snippet}
+        onClose={onClose}
+        onSaveSnippetOutput={onSaveSnippetOutput}
+      />
     </Modal>
   );
 };

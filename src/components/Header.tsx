@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { FilterState, SortOption } from '../types/snippet';
+import { type AppEnvironment } from '../types/environment';
 
 interface HeaderProps {
   filters: FilterState;
@@ -21,6 +22,8 @@ interface HeaderProps {
   onOpenServer: () => void;
   onOpenImportRemote?: () => void;
   serverActive?: boolean;
+  activeEnvironment?: AppEnvironment | null;
+  onOpenEnvironmentModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenServer,
   onOpenImportRemote,
   serverActive,
+  activeEnvironment,
+  onOpenEnvironmentModal,
 }) => {
   const inputRef = useRef<TextInput>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -147,6 +152,26 @@ export const Header: React.FC<HeaderProps> = ({
           <Ionicons name="swap-vertical" size={15} color={colors.textSecondary} />
           <Text style={styles.sortText}>{getSortLabel()}</Text>
         </TouchableOpacity>
+
+        {/* Active Environment Switcher Button */}
+        {activeEnvironment && onOpenEnvironmentModal && (
+          <TouchableOpacity
+            style={[
+              styles.envBtn,
+              { borderColor: `${activeEnvironment.color}55` },
+            ]}
+            onPress={onOpenEnvironmentModal}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.envDot, { backgroundColor: activeEnvironment.color }]} />
+            {!isMobileLayout && (
+              <Text style={[styles.envBtnText, { color: activeEnvironment.color }]}>
+                {activeEnvironment.name}
+              </Text>
+            )}
+            <Ionicons name="chevron-down" size={12} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
 
         {/* API Server Button */}
         <TouchableOpacity
@@ -379,6 +404,26 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'monospace',
     fontWeight: '600',
+  },
+  envBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 42,
+  },
+  envDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  envBtnText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    fontWeight: '700',
   },
   serverBtn: {
     flexDirection: 'row',

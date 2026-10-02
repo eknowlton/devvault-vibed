@@ -33,16 +33,18 @@ interface CodeSnippetCardModalProps {
 
 type TabMode = 'preview' | 'customize' | 'share';
 
-export const CodeSnippetCardModal: React.FC<CodeSnippetCardModalProps> = ({
-  visible,
+interface CodeSnippetCardContentProps {
+  snippet: Snippet;
+  onClose: () => void;
+}
+
+const CodeSnippetCardContent: React.FC<CodeSnippetCardContentProps> = ({
   snippet,
   onClose,
 }) => {
-  if (!snippet) return null;
-
   const [activeTab, setActiveTab] = useState<TabMode>('preview');
-  const [filename, setFilename] = useState('');
-  const [description, setDescription] = useState('');
+  const [filename, setFilename] = useState(getDefaultFilename(snippet.title, snippet.language));
+  const [description, setDescription] = useState(snippet.description || '');
   const [theme, setTheme] = useState<IdeTheme>('vscode');
   const [showLineNumbers, setShowLineNumbers] = useState(true);
   const [showBackdrop, setShowBackdrop] = useState(true);
@@ -50,12 +52,10 @@ export const CodeSnippetCardModal: React.FC<CodeSnippetCardModalProps> = ({
 
   // Initialize state when snippet opens
   useEffect(() => {
-    if (snippet) {
-      setFilename(getDefaultFilename(snippet.title, snippet.language));
-      setDescription(snippet.description || '');
-      setActiveTab('preview');
-    }
-  }, [snippet?.id, visible]);
+    setFilename(getDefaultFilename(snippet.title, snippet.language));
+    setDescription(snippet.description || '');
+    setActiveTab('preview');
+  }, [snippet.id]);
 
   const showToast = (msg: string) => {
     setCopiedNotification(msg);
@@ -129,8 +129,7 @@ export const CodeSnippetCardModal: React.FC<CodeSnippetCardModalProps> = ({
   const currentThemeConfig = IDE_THEMES[theme];
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Header */}
           <View style={styles.header}>
@@ -610,6 +609,19 @@ export const CodeSnippetCardModal: React.FC<CodeSnippetCardModalProps> = ({
           </ScrollView>
         </View>
       </View>
+  );
+};
+
+export const CodeSnippetCardModal: React.FC<CodeSnippetCardModalProps> = ({
+  visible,
+  snippet,
+  onClose,
+}) => {
+  if (!visible || !snippet) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <CodeSnippetCardContent snippet={snippet} onClose={onClose} />
     </Modal>
   );
 };
