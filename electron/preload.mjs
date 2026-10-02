@@ -1,4 +1,17 @@
-import { contextBridge, ipcRenderer } from 'electron';
+// Set data attributes on html element for platform-specific desktop styling
+if (typeof document !== 'undefined') {
+  const setPlatformAttrs = () => {
+    if (document.documentElement) {
+      document.documentElement.setAttribute('data-electron', 'true');
+      document.documentElement.setAttribute('data-electron-platform', process.platform);
+    }
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setPlatformAttrs);
+  } else {
+    setPlatformAttrs();
+  }
+}
 
 /**
  * Preload Script exposing secure IPC bridge to DevVault UI
@@ -6,6 +19,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
   getPlatform: () => ipcRenderer.invoke('app:getPlatform'),
+
+  // Window State Controls
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+  isWindowMaximized: () => ipcRenderer.invoke('window:isMaximized'),
 
   // In-App API Server Management
   startServer: (config) => ipcRenderer.invoke('server:start', config),

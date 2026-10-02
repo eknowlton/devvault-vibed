@@ -117,6 +117,30 @@ export function injectGlobalWebStyles(): void {
       background-color: rgba(88, 166, 255, 0.3);
       color: #f0f6fc;
     }
+
+    /* =========================================================
+       Electron Frameless Drag Region & Window Chrome
+       ========================================================= */
+    [data-drag-region="true"],
+    [data-window-drag="true"] {
+      -webkit-app-region: drag;
+    }
+
+    [data-no-drag="true"],
+    [data-searchbar],
+    input,
+    textarea,
+    button,
+    a,
+    select,
+    [role="button"] {
+      -webkit-app-region: no-drag;
+    }
+
+    /* macOS traffic light inset spacing when running in Electron with hiddenInset */
+    html[data-electron="true"][data-electron-platform="darwin"] [data-drag-region="true"] {
+      padding-left: 80px;
+    }
   `;
 
   const styleEl = document.createElement('style');

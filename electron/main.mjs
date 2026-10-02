@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, nativeTheme } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,12 @@ import {
   stopApiServer,
   getApiServerStatus,
 } from '../server/apiServer.mjs';
+
+// Force dark mode for OS window decorations, system dialogs, and caption controls
+nativeTheme.themeSource = 'dark';
+
+// Remove default application menu bar
+Menu.setApplicationMenu(null);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,7 +50,10 @@ function saveServerConfig(cfg) {
 }
 
 async function createWindow() {
-  mainWindow = new BrowserWindow({
+  const isMac = process.platform === 'darwin';
+  const isWindows = process.platform === 'win32';
+
+  const windowOptions = {
     width: 1280,
     height: 840,
     minWidth: 920,
@@ -52,6 +61,7 @@ async function createWindow() {
     backgroundColor: '#0d1117',
     title: 'DevVault: CLI & Code Notebook',
     icon: path.join(__dirname, '..', 'assets', 'icon.png'),
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
       contextIsolation: true,
@@ -59,7 +69,29 @@ async function createWindow() {
       sandbox: false,
     },
     show: false,
-  });
+  };
+
+  if (isMac) {
+    // Hide native titlebar on macOS and seamlessly inset dark traffic lights
+    windowOptions.titleBarStyle = 'hiddenInset';
+    windowOptions.trafficLightPosition = { x: 14, y: 14 };
+  } else if (isWindows) {
+    // Hide bulky titlebar on Windows and render dark controls overlay
+    windowOptions.titleBarStyle = 'hidden';
+    windowOptions.titleBarOverlay = {
+      color: '#0d1117',
+      symbolColor: '#c9d1d9',
+      height: 34,
+    };
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
+
+  // Completely hide and remove menu bar from the window
+  mainWindow.setMenuBarVisibility(false);
+  if (typeof mainWindow.removeMenu === 'function') {
+    mainWindow.removeMenu();
+  }
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -183,6 +215,29 @@ ipcMain.handle('shell:openExternal', async (_event, url) => {
 
 ipcMain.handle('app:getPlatform', () => {
   return process.platform; // 'win32' | 'linux' | 'darwin'
+});
+
+// Window State Management Handlers
+ipcMain.handle('window:minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+});
+
+ipcMain.handle('window:maximize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle('window:close', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
+});
+
+ipcMain.handle('window:isMaximized', () => {
+  return mainWindow && !mainWindow.isDestroyed() ? mainWindow.isMaximized() : false;
 });
 
 // Application Lifecycle

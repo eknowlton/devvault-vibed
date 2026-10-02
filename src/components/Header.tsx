@@ -87,7 +87,11 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      // @ts-ignore - React Native Web dataSet for Electron window dragging
+      dataSet={{ dragRegion: 'true', windowDrag: 'true' }}
+    >
       {/* Search Input Bar */}
       <View style={styles.mainRow}>
         {isMobileLayout && (

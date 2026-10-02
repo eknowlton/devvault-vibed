@@ -24,6 +24,7 @@ const testSuites = [
   { name: 'SVG Card XML Well-Formedness', file: 'tests/validateSvgXml.mjs' },
   { name: 'Programmatic Embedded API Server', file: 'tests/testEmbeddedServer.mjs' },
   { name: 'App-Wide Environments & Variables', file: 'tests/testEnvironmentVariables.mjs' },
+  { name: 'Electron Window & Menu Bar Config', file: 'tests/testElectronWindowConfig.mjs' },
 ];
 
 async function runSuite(suite) {
