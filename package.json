@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "DevVault: Developer CLI & Code Notebook with Embedded API Server",
   "author": "DevVault Team",
+  "email": "eknowlton@gmail.com",
   "main": "index.ts",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
